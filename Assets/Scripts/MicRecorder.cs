@@ -15,8 +15,8 @@ public class MicRecorder : MonoBehaviour {
 
 	// Constants
 
-	const float AudioClipLength = 10f;
-	const float ServerTimeout   =  4f;
+	const float AudioClipLength = 9f;
+	const float ServerTimeout   = 5f;
 
 
 
@@ -25,18 +25,12 @@ public class MicRecorder : MonoBehaviour {
 	[Header("Resources")]
 	[SerializeField] Sprite m_SpriteStart;
 	[SerializeField] Sprite m_SpriteStop;
-	[SerializeField] Sprite m_SpriteWait0;
-	[SerializeField] Sprite m_SpriteWait1;
-	[SerializeField] Sprite m_SpriteWait2;
-	[SerializeField] Sprite m_SpriteWait3;
-
 	Image  m_Image;
 	Button m_Button;
 
 	[Header("Components")]
 	[SerializeField] MicSelector m_MicSelector;
 	[SerializeField] TextMeshProUGUI m_Text;
-
 	string    m_Mic;
 	AudioClip m_Clip;
 
@@ -46,10 +40,6 @@ public class MicRecorder : MonoBehaviour {
 
 	Sprite SpriteStart => m_SpriteStart;
 	Sprite SpriteStop  => m_SpriteStop;
-	Sprite SpriteWait0 => m_SpriteWait0;
-	Sprite SpriteWait1 => m_SpriteWait1;
-	Sprite SpriteWait2 => m_SpriteWait2;
-	Sprite SpriteWait3 => m_SpriteWait3;
 
 	public Image  Image  => m_Image  || TryGetComponent(out m_Image ) ? m_Image  : null;
 	public Button Button => m_Button || TryGetComponent(out m_Button) ? m_Button : null;
@@ -59,11 +49,11 @@ public class MicRecorder : MonoBehaviour {
 	}
 
 	MicSelector MicSelector => m_MicSelector;
+
 	string Text {
 		get => m_Text.text;
 		set => m_Text.text = value;
 	}
-
 	string Mic {
 		get => m_Mic;
 		set => m_Mic = value;
@@ -98,7 +88,7 @@ public class MicRecorder : MonoBehaviour {
 				< 3.0f => $"(Recording...)",
 				_ => $"(Recording)",
 			};
-			if ((int)(AudioClipLength - 0.1f) < elapsed) {
+			if ((int)AudioClipLength < elapsed + 0.1f) {
 				StopRecord();
 				break;
 			}
@@ -118,7 +108,6 @@ public class MicRecorder : MonoBehaviour {
 	}
 
 	async Task ConvertDataAsync() {
-		Text = $"(Converting...)";
 		Button.enabled = false;
 
 		/* Transmit clip to server */
@@ -126,11 +115,11 @@ public class MicRecorder : MonoBehaviour {
 		float startpoint = Time.realtimeSinceStartup;
 		while (true) {
 			float elapsed = Time.realtimeSinceStartup - startpoint;
-			Sprite = (elapsed % 1f) switch {
-				< 0.1f => SpriteWait1,
-				< 0.2f => SpriteWait2,
-				< 0.3f => SpriteWait3,
-				_ => SpriteWait0,
+			Text = (elapsed % 3f) switch {
+				< 1.0f => $"(Converting.)  ",
+				< 2.0f => $"(Converting..) ",
+				< 3.0f => $"(Converting...)",
+				_ => $"(Converting)",
 			};
 			await Task.Yield();
 
