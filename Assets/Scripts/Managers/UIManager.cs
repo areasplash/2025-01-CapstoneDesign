@@ -1,36 +1,42 @@
 using UnityEngine;
-using System;
-using System.Collections.Generic;
+
+#if UNITY_EDITOR
+	using UnityEditor;
+#endif
 
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Hash Map
+// UI Manager
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[Serializable]
-public class HashMap<K, V> : Dictionary<K, V>, ISerializationCallbackReceiver {
+[AddComponentMenu("Manager/UI Manager")]
+public class UIManager : MonoSingleton<UIManager> {
+
+	// Editor
+
+	#if UNITY_EDITOR
+		[CustomEditor(typeof(UIManager))]
+		class UIManagerEditor : EditorExtensions {
+			UIManager I => target as UIManager;
+			public override void OnInspectorGUI() {
+				Begin("UI Manager");
+				
+				End();
+			}
+		}
+	#endif
+
+
 
 	// Fields
 
-	[SerializeField] List<K> k = new();
-	[SerializeField] List<V> v = new();
+
+
+	// Properties
 
 
 
 	// Methods
 
-	public void OnBeforeSerialize() {
-		k.Clear();
-		v.Clear();
-		foreach (var (k, v) in this) {
-			this.k.Add(k);
-			this.v.Add(v);
-		}
-	}
-
-	public void OnAfterDeserialize() {
-		Clear();
-		for (int i = 0; i < k.Count; i++) Add(k[i], v[i]);
-	}
 }
