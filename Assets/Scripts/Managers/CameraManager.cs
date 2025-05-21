@@ -50,6 +50,15 @@ public class CameraManager : MonoSingleton<CameraManager> {
 
 
 
+	// Constants
+
+	public const float PixelPerUnit = 16f;
+	public const float PixelXSize   =  1f / (PixelPerUnit * 1.00000000000f);
+	public const float PixelYSize   =  1f / (PixelPerUnit * 0.50000000000f);
+	public const float PixelZSize   =  1f / (PixelPerUnit * 0.86602540378f);
+
+
+
 	// Fields
 
 	Camera m_MainCamera;
