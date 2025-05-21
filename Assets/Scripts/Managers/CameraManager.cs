@@ -35,7 +35,7 @@ public class CameraManager : MonoSingleton<CameraManager> {
 					Space();
 				}
 				if (CameraData) {
-                    LabelField("URP Camera", EditorStyles.boldLabel);
+					LabelField("URP Camera", EditorStyles.boldLabel);
 					PostProcessing = Toggle("Post Processing", PostProcessing);
 					BeginDisabledGroup(!PostProcessing);
 					AntiAliasing = Toggle("Anti Aliasing", AntiAliasing);

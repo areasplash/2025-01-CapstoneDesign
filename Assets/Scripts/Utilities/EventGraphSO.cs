@@ -28,6 +28,7 @@ public class EventGraphSO : ScriptableObject {
 			public override void OnInspectorGUI() {
 				Begin("Event Graph SO");
 
+				LabelField("Event Graph", EditorStyles.boldLabel);
 				if (Button("Open Event Graph")) I.Open();				
 				Space();
 
