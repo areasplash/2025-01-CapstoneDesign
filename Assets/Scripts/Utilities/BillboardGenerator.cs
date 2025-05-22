@@ -11,7 +11,7 @@ using System.IO;
 // Billboard Generator
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[RequireComponent(typeof(MeshFilter))]
+[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class BillboardGenerator : MonoBehaviour {
 
 	// Editor
@@ -21,7 +21,7 @@ public class BillboardGenerator : MonoBehaviour {
 		class BillboardGeneratorSOEditor : EditorExtensions {
 			BillboardGenerator I => target as BillboardGenerator;
 			public override void OnInspectorGUI() {
-				Begin("Billboard Generator SO");
+				Begin("Billboard Generator");
 
 				var status = PrefabUtility.GetPrefabInstanceStatus(I.gameObject);
 				var disabled = status == PrefabInstanceStatus.Connected;
@@ -115,7 +115,7 @@ public class BillboardGenerator : MonoBehaviour {
 			};
 			mesh.RecalculateTangents();
 
-			var parent = transform.parent;
+			var parent = transform;
 			while (parent.parent != null) parent = parent.parent;
 			var path = $"Assets/Materials/Meshes/Billboard_{parent.name}.asset";
 			Directory.CreateDirectory("Assets/Materials/Meshes");
