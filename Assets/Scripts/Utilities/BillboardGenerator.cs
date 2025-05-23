@@ -87,15 +87,18 @@ public class BillboardGenerator : MonoBehaviour {
 
 	#if UNITY_EDITOR
 		public void GenerateBillboard(MeshFilter meshFilter) {
+		var name = $"Billboard_x{Size.x}_y{Size.y}_n{Normal}_p{Pivot}";
+		var path = $"Assets/Materials/Meshes/{name}.asset";
+		var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+		if (mesh == null) {
 			var halfWidth  = Size.x * 0.5f;
 			var halfHeight = Size.y * 0.5f;
 			var x = 0f;
 			var y = Pivot == MeshPivot.Bottom ? halfHeight : 0f;
 			var radian = Mathf.Deg2Rad * Normal;
 			var normal = new Vector3(0f, Mathf.Sin(radian), -Mathf.Cos(radian));
-
-			var mesh = new Mesh() {
-				name = "Billboard",
+			mesh = new Mesh  {
+				name = name,
 				vertices = new Vector3[] {
 					new(x - halfWidth, y - halfHeight, 0f), new(x + halfWidth, y - halfHeight, 0f),
 					new(x - halfWidth, y + halfHeight, 0f), new(x + halfWidth, y + halfHeight, 0f),
@@ -115,14 +118,12 @@ public class BillboardGenerator : MonoBehaviour {
 			};
 			mesh.RecalculateTangents();
 
-			var parent = transform;
-			while (parent.parent != null) parent = parent.parent;
-			var path = $"Assets/Materials/Meshes/Billboard_{parent.name}.asset";
-			Directory.CreateDirectory("Assets/Materials/Meshes");
+			Directory.CreateDirectory($"Assets/Materials/Meshes");
 			AssetDatabase.CreateAsset(mesh, path);
-			AssetDatabase.SaveAssets();
+			AssetDatabase.SaveAssets(); 
 			AssetDatabase.Refresh();
-			meshFilter.sharedMesh = mesh;
 		}
+		meshFilter.sharedMesh = mesh;
+	}
 	#endif
 }
