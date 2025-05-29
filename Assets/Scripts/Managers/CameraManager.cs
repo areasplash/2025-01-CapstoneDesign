@@ -32,6 +32,7 @@ public class CameraManager : MonoSingleton<CameraManager> {
 					FocusDistance     = Slider      ("Focus Distance",      FocusDistance, 0f, 255f);
 					FieldOfView       = FloatField  ("Field Of View",       FieldOfView);
 					OrthographicSize  = FloatField  ("Orthographic Size",   OrthographicSize);
+					RotationCurve     = CurveField  ("Rotation Curve",      RotationCurve);
 					Space();
 				}
 				if (CameraData) {
@@ -65,6 +66,7 @@ public class CameraManager : MonoSingleton<CameraManager> {
 	UniversalAdditionalCameraData m_CameraData;
 
 	[SerializeField] float m_FocusDistance;
+	[SerializeField] AnimationCurve m_RotationCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
 
 
@@ -140,6 +142,10 @@ public class CameraManager : MonoSingleton<CameraManager> {
 	public static float OrthographicSize {
 		get => MainCamera.orthographicSize;
 		set => MainCamera.orthographicSize = Mathf.Clamp(value, 1f, 179f);
+	}
+	public static AnimationCurve RotationCurve {
+		get => Instance.m_RotationCurve;
+		set => Instance.m_RotationCurve = value;
 	}
 
 	static bool PostProcessing {

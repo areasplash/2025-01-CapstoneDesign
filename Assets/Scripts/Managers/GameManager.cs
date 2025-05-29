@@ -149,5 +149,6 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	void Update() {
 		SimulateEvents();
+		EnvironmentManager.TimeOfDay += Time.deltaTime * 0.02f;
 	}
 }
