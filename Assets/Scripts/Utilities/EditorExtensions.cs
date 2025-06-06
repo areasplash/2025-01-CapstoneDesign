@@ -276,6 +276,15 @@ using System.Collections.Generic;
 		public string TextField(string label, string value) {
 			return EditorGUILayout.TextField(label, value);
 		}
+		public string TextArea(string label, string value) {
+			BeginHorizontal();
+			PrefixLabel(label);
+			value = EditorGUILayout.TextArea(value,
+				new GUIStyle(EditorStyles.textArea) { wordWrap = true, stretchHeight = true },
+				GUILayout.ExpandHeight(true));
+			EndHorizontal();
+			return value;
+		}
 
 		public AnimationCurve CurveField(AnimationCurve curve) {
 			return EditorGUILayout.CurveField(curve);

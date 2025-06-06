@@ -77,14 +77,16 @@ public class InputManager : MonoSingleton<InputManager> {
 	uint m_KeyPrev;
 	Vector2 m_MoveDirection;
 	Vector2 m_PointPosition;
+	Vector2 m_ScrollWheel;
+	Vector2 m_Navigate;
 
 
 
 	// Properties
 
-	static PlayerInput PlayerInput
-		=> Instance.m_PlayerInput || Instance.TryGetComponent(out Instance.m_PlayerInput)
-		?  Instance.m_PlayerInput :  null;
+	static PlayerInput PlayerInput =>
+		Instance.m_PlayerInput || Instance.TryGetComponent(out Instance.m_PlayerInput) ?
+		Instance.m_PlayerInput : null;
 
 	static InputActionAsset InputActionAsset => PlayerInput.actions;
 
@@ -106,6 +108,14 @@ public class InputManager : MonoSingleton<InputManager> {
 		get         => Instance.m_PointPosition;
 		private set => Instance.m_PointPosition = value;
 	}
+	public static Vector2 ScrollWheel {
+		get         => Instance.m_ScrollWheel;
+		private set => Instance.m_ScrollWheel = value;
+	}
+	public static Vector2 Navigate {
+		get         => Instance.m_Navigate;
+		private set => Instance.m_Navigate = value;
+	}
 
 
 
@@ -120,20 +130,20 @@ public class InputManager : MonoSingleton<InputManager> {
 
 				int index = (int)keyAction;
 				inputAction.performed += (KeyAction)index switch {
-					KeyAction.Move  => callback => MoveDirection = callback.ReadValue<Vector2>(),
-					KeyAction.Point => callback => PointPosition = callback.ReadValue<Vector2>(),
-					_ => callback => {
-						bool flag = callback.action.IsPressed();
-						KeyNext = flag ? (KeyNext | (1u << index)) : (KeyNext & ~(1u << index));
-					},
+					KeyAction.Move        => callback => MoveDirection = callback.ReadValue<Vector2>(),
+					KeyAction.Point       => callback => PointPosition = callback.ReadValue<Vector2>(),
+					KeyAction.ScrollWheel => callback => ScrollWheel   = callback.ReadValue<Vector2>(),
+					KeyAction.Navigate    => callback => Navigate      = callback.ReadValue<Vector2>(),
+					_ => callback => _ = callback.action.IsPressed() ?
+						KeyNext |=  (1u << index) :
+						KeyNext &= ~(1u << index),
 				};
 				inputAction.started  += callback => KeyNext |=  (1u << index);
 				inputAction.canceled += callback => KeyNext &= ~(1u << index);
 			}
 		}
+		InputSystem.onBeforeUpdate += () => KeyPrev = KeyNext;
 	}
-
-	static void UpdateKey() => KeyPrev = KeyNext;
 
 	static bool GetKeyNext(KeyAction key) => (KeyNext & (1u << (int)key)) != 0u;
 	static bool GetKeyPrev(KeyAction key) => (KeyPrev & (1u << (int)key)) != 0u;
@@ -145,17 +155,17 @@ public class InputManager : MonoSingleton<InputManager> {
 	public static void SwitchActionMap(ActionMap actionMap) {
 		if (InputActionAsset == null) return;
 		PlayerInput.currentActionMap = InputActionAsset.FindActionMap(actionMap.ToString());
+		KeyNext = 0u;
+		KeyPrev = 0u;
+		MoveDirection = Vector2.zero;
+		PointPosition = Vector2.zero;
+		ScrollWheel   = Vector2.zero;
+		Navigate      = Vector2.zero;
 	}
 
 
 
 	// Lifecycle
 
-	void Start() {
-		RegisterActionMap();
-	}
-
-	void LateUpdate() {
-		UpdateKey();
-	}
+	void Start() => RegisterActionMap();
 }
