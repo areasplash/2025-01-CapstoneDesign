@@ -14,7 +14,21 @@ public abstract class BaseCanvas : MonoBehaviour {
 	public virtual void Show() {
 		gameObject.SetActive(true);
 	}
+
 	public virtual void Hide(bool keepState = false) {
 		gameObject.SetActive(false);
+	}
+
+	public virtual void Back() {
+		UIManager.PopOverlay();
+	}
+
+
+
+	// Lifecycle
+
+	protected virtual void Update() {
+		if (UIManager.CurrentCanvas != this) return;
+		if (InputManager.GetKeyUp(KeyAction.Cancel)) Back();
 	}
 }

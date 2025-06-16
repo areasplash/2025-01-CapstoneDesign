@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using TMPro;
 
 #if UNITY_EDITOR
-	using UnityEditor;
+using UnityEditor;
 #endif
 
 
@@ -20,43 +20,43 @@ public class GameCanvas : BaseCanvas {
 	// Editor
 
 	#if UNITY_EDITOR
-		[CustomEditor(typeof(GameCanvas))]
-		class GameCanvasEditor : EditorExtensions {
-			GameCanvas I => target as GameCanvas;
-			static bool foldout = false;
-			public override void OnInspectorGUI() {
-				Begin("Game Canvas");
+	[CustomEditor(typeof(GameCanvas))]
+	class GameCanvasEditor : EditorExtensions {
+		GameCanvas I => target as GameCanvas;
+		static bool foldout = false;
+		public override void OnInspectorGUI() {
+			Begin("Game Canvas");
 
-				if (foldout = Foldout("Sprite", foldout)) {
-					PropertyField("NumPSprite");
-					PropertyField("NumMSprite");
-					PropertyField("Num0Sprite");
-					PropertyField("Num1Sprite");
-					PropertyField("Num2Sprite");
-					PropertyField("Num3Sprite");
-					PropertyField("Num4Sprite");
-					PropertyField("Num5Sprite");
-					PropertyField("Num6Sprite");
-					PropertyField("Num7Sprite");
-					PropertyField("Num8Sprite");
-					PropertyField("Num9Sprite");
-				}
-				Space();
-				LabelField("Gem Collect Message", EditorStyles.boldLabel);
-				I.MessageTransform      = ObjectField("Message Transform",       I.MessageTransform);
-				I.MessageIconImage      = ObjectField("Message Icon Image",      I.MessageIconImage);
-				I.MessageValueTransform = ObjectField("Message Value Transform", I.MessageValueTransform);
-				I.MessageTextUGUI       = ObjectField("Message Text UGUI",       I.MessageTextUGUI);
-				if (I.MessageTextUGUI) {
-					I.MessageText = TextField("Message Text", I.MessageText);
-					LabelField(" ", "{N} = Gem Amount");
-				}
-				I.MessageLifetime = FloatField("Message Lifetime", I.MessageLifetime);
-				Space();
-
-				End();
+			if (foldout = Foldout("Sprite", foldout)) {
+				PropertyField("NumPSprite");
+				PropertyField("NumMSprite");
+				PropertyField("Num0Sprite");
+				PropertyField("Num1Sprite");
+				PropertyField("Num2Sprite");
+				PropertyField("Num3Sprite");
+				PropertyField("Num4Sprite");
+				PropertyField("Num5Sprite");
+				PropertyField("Num6Sprite");
+				PropertyField("Num7Sprite");
+				PropertyField("Num8Sprite");
+				PropertyField("Num9Sprite");
 			}
+			Space();
+			LabelField("Gem Collect Message", EditorStyles.boldLabel);
+			I.MessageTransform      = ObjectField("Message Transform",       I.MessageTransform);
+			I.MessageIconImage      = ObjectField("Message Icon Image",      I.MessageIconImage);
+			I.MessageValueTransform = ObjectField("Message Value Transform", I.MessageValueTransform);
+			I.MessageTextUGUI       = ObjectField("Message Text UGUI",       I.MessageTextUGUI);
+			if (I.MessageTextUGUI) {
+				I.MessageText = TextField("Message Text", I.MessageText);
+				LabelField(" ", "{N} = Gem Amount");
+			}
+			I.MessageLifetime = FloatField("Message Lifetime", I.MessageLifetime);
+			Space();
+
+			End();
 		}
+	}
 	#endif
 
 
@@ -80,12 +80,12 @@ public class GameCanvas : BaseCanvas {
 
 	// Fields
 
-	[SerializeField] RectTransform   m_MessageTransform;
-	[SerializeField] Image           m_MessageIconImage;
-	[SerializeField] RectTransform   m_MessageValueTransform;
+	[SerializeField] RectTransform m_MessageTransform;
+	[SerializeField] Image m_MessageIconImage;
+	[SerializeField] RectTransform m_MessageValueTransform;
 	[SerializeField] TextMeshProUGUI m_MessageTextUGUI;
-	[SerializeField] string          m_MessageText;
-	[SerializeField] float           m_MessageLifetime = 5f;
+	[SerializeField] string m_MessageText;
+	[SerializeField] float m_MessageLifetime = 5f;
 	float m_MessageTimer;
 
 
@@ -202,7 +202,7 @@ public class GameCanvas : BaseCanvas {
 		MessageTransform.gameObject.SetActive(false);
 	}
 
-	void Update() {
+	void LateUpdate() {
 		if (0f < MessageTimer) {
 			MessageTimer = Mathf.Max(0f, MessageTimer - Time.deltaTime);
 			if (MessageTimer == 0f) MessageTransform.gameObject.SetActive(false);

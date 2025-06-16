@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 using System;
 
 #if UNITY_EDITOR
-	using UnityEditor;
+using UnityEditor;
 #endif
 
 
@@ -45,26 +45,22 @@ public class InputManager : MonoSingleton<InputManager> {
 	// Editor
 
 	#if UNITY_EDITOR
-		[CustomEditor(typeof(InputManager))]
-		class InputManagerEditor : EditorExtensions {
-			InputManager I => target as InputManager;
-			public override void OnInspectorGUI() {
-				Begin("Input Manager");
+	[CustomEditor(typeof(InputManager))]
+	class InputManagerEditor : EditorExtensions {
+		InputManager I => target as InputManager;
+		public override void OnInspectorGUI() {
+			Begin("Input Manager");
 
-				if (!InputActionAsset) {
-					HelpBox("No input action asset found.");
-					Space();
-				}
-				LabelField("Debug", EditorStyles.boldLabel);
-				BeginDisabledGroup();
-				var actionMap = Application.isPlaying ? PlayerInput.currentActionMap.name : "None";
-				TextField("Action Map", actionMap);
-				EndDisabledGroup();
-				Space();
+			LabelField("Debug", EditorStyles.boldLabel);
+			BeginDisabledGroup();
+			var actionMap = Application.isPlaying ? PlayerInput.currentActionMap.name : "None";
+			TextField("Action Map", actionMap);
+			EndDisabledGroup();
+			Space();
 
-				End();
-			}
+			End();
 		}
+	}
 	#endif
 
 
@@ -134,9 +130,10 @@ public class InputManager : MonoSingleton<InputManager> {
 					KeyAction.Point       => callback => PointPosition = callback.ReadValue<Vector2>(),
 					KeyAction.ScrollWheel => callback => ScrollWheel   = callback.ReadValue<Vector2>(),
 					KeyAction.Navigate    => callback => Navigate      = callback.ReadValue<Vector2>(),
-					_ => callback => _ = callback.action.IsPressed() ?
-						KeyNext |=  (1u << index) :
-						KeyNext &= ~(1u << index),
+					_ => callback => _ = callback.action.IsPressed() switch {
+						true  => KeyNext |=  (1u << index),
+						false => KeyNext &= ~(1u << index),
+					},
 				};
 				inputAction.started  += callback => KeyNext |=  (1u << index);
 				inputAction.canceled += callback => KeyNext &= ~(1u << index);
@@ -148,9 +145,9 @@ public class InputManager : MonoSingleton<InputManager> {
 	static bool GetKeyNext(KeyAction key) => (KeyNext & (1u << (int)key)) != 0u;
 	static bool GetKeyPrev(KeyAction key) => (KeyPrev & (1u << (int)key)) != 0u;
 
-	public static bool GetKey    (KeyAction key) =>  GetKeyNext(key);
-	public static bool GetKeyDown(KeyAction key) =>  GetKeyNext(key) && !GetKeyPrev(key);
-	public static bool GetKeyUp  (KeyAction key) => !GetKeyNext(key) &&  GetKeyPrev(key);
+	public static bool GetKey(KeyAction key) => GetKeyNext(key);
+	public static bool GetKeyDown(KeyAction key) => GetKeyNext(key) && !GetKeyPrev(key);
+	public static bool GetKeyUp(KeyAction key) => !GetKeyNext(key) && GetKeyPrev(key);
 
 	public static void SwitchActionMap(ActionMap actionMap) {
 		if (InputActionAsset == null) return;

@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 #if UNITY_EDITOR
-	using UnityEditor;
+using UnityEditor;
 #endif
 
 
@@ -16,23 +16,23 @@ public class Player : Actor {
 	// Editor
 
 	#if UNITY_EDITOR
-		[CustomEditor(typeof(Player))]
-		class PlayerEditor : EditorExtensions {
-			Player I => target as Player;
-			public override void OnInspectorGUI() {
-				Begin("Player");
+	[CustomEditor(typeof(Player))]
+	class PlayerEditor : EditorExtensions {
+		Player I => target as Player;
+		public override void OnInspectorGUI() {
+			Begin("Player");
 
-				LabelField("Animator", EditorStyles.boldLabel);
-				I.BodyAnimator    = ObjectField("Body Animator",    I.BodyAnimator);
-				I.EmotionAnimator = ObjectField("Emotion Animator", I.EmotionAnimator);
-				Space();
-				LabelField("Physics", EditorStyles.boldLabel);
-				I.Speed = FloatField("Speed", I.Speed);
-				Space();
+			LabelField("Animator", EditorStyles.boldLabel);
+			I.BodyAnimator    = ObjectField("Body Animator",    I.BodyAnimator);
+			I.EmotionAnimator = ObjectField("Emotion Animator", I.EmotionAnimator);
+			Space();
+			LabelField("Physics", EditorStyles.boldLabel);
+			I.Speed = FloatField("Speed", I.Speed);
+			Space();
 
-				End();
-			}
+			End();
 		}
+	}
 	#endif
 
 

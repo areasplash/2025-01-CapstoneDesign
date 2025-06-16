@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using TMPro;
 
 #if UNITY_EDITOR
-	using UnityEditor;
+using UnityEditor;
 #endif
 
 
@@ -20,52 +20,52 @@ public class DialogueCanvas : BaseCanvas {
 	// Editor
 
 	#if UNITY_EDITOR
-		[CustomEditor(typeof(DialogueCanvas))]
-		class DialogueCanvasEditor : EditorExtensions {
-			DialogueCanvas I => target as DialogueCanvas;
-			public override void OnInspectorGUI() {
-				Begin("Dialogue Canvas");
+	[CustomEditor(typeof(DialogueCanvas))]
+	class DialogueCanvasEditor : EditorExtensions {
+		DialogueCanvas I => target as DialogueCanvas;
+		public override void OnInspectorGUI() {
+			Begin("Dialogue Canvas");
 
-				LabelField("Speaker Name", EditorStyles.boldLabel);
-				I.NameTransform = ObjectField("Name Transform", I.NameTransform);
-				I.NameTextUGUI  = ObjectField("Name Text UGUI", I.NameTextUGUI);
-				if (I.NameTextUGUI) I.NameText = TextField("Name Text", I.NameText);
-				Space();
-				LabelField("Dialogue Text", EditorStyles.boldLabel);
-				I.TextTransform = ObjectField("Text Transform", I.TextTransform);
-				I.TextTextUGUI  = ObjectField("Text Text UGUI", I.TextTextUGUI);
-				if (I.TextTextUGUI) I.TextText = TextArea("Text Text", I.TextText);
-				Space();
-				LabelField("Player Input", EditorStyles.boldLabel);
-				I.InputField = ObjectField("Input Field", I.InputField);
-				if (I.InputField) I.InputText   = TextField("Input Text",   I.InputText);
-				if (I.InputField) I.EnableInput = Toggle   ("Enable Input", I.EnableInput);
-				Space();
-				LabelField("Settings", EditorStyles.boldLabel);
-				I.TextDisplayDelay = Slider("Text Display Delay", I.TextDisplayDelay, 0.01f, 0.10f);
-				I.AutoPlay         = Toggle("Auto Play",          I.AutoPlay);
-				if (I.AutoPlay) I.AutoPlayDelay = Slider("Auto Play Delay", I.AutoPlayDelay, 1f, 10f);
-				Space();
+			LabelField("Speaker Name", EditorStyles.boldLabel);
+			I.NameTransform = ObjectField("Name Transform", I.NameTransform);
+			I.NameTextUGUI  = ObjectField("Name Text UGUI", I.NameTextUGUI);
+			if (I.NameTextUGUI) I.NameText = TextField("Name Text", I.NameText);
+			Space();
+			LabelField("Dialogue Text", EditorStyles.boldLabel);
+			I.TextTransform = ObjectField("Text Transform", I.TextTransform);
+			I.TextTextUGUI  = ObjectField("Text Text UGUI", I.TextTextUGUI);
+			if (I.TextTextUGUI) I.TextText = TextArea("Text Text", I.TextText);
+			Space();
+			LabelField("Player Input", EditorStyles.boldLabel);
+			I.InputField = ObjectField("Input Field", I.InputField);
+			if (I.InputField) I.InputText = TextField("Input Text", I.InputText);
+			if (I.InputField) I.EnableInput = Toggle("Enable Input", I.EnableInput);
+			Space();
+			LabelField("Settings", EditorStyles.boldLabel);
+			I.TextDisplayDelay = Slider("Text Display Delay", I.TextDisplayDelay, 0.01f, 0.10f);
+			I.AutoPlay = Toggle("Auto Play", I.AutoPlay);
+			if (I.AutoPlay) I.AutoPlayDelay = Slider("Auto Play Delay", I.AutoPlayDelay, 1f, 10f);
+			Space();
 
-				End();
-			}
+			End();
 		}
+	}
 	#endif
 
 
 
 	// Fields
 
-	[SerializeField] RectTransform   m_NameTransform;
+	[SerializeField] RectTransform m_NameTransform;
 	[SerializeField] TextMeshProUGUI m_NameTextUGUI;
-	[SerializeField] RectTransform   m_TextTransform;
+	[SerializeField] RectTransform m_TextTransform;
 	[SerializeField] TextMeshProUGUI m_TextTextUGUI;
-	[SerializeField] TMP_InputField  m_InputField;
+	[SerializeField] TMP_InputField m_InputField;
 
 	[SerializeField] float m_TextDisplayDelay = 0.04f;
 	float m_TextDisplayTimer;
-	int   m_TextIndex;
-	[SerializeField] bool  m_AutoPlay;
+	int m_TextIndex;
+	[SerializeField] bool m_AutoPlay;
 	[SerializeField] float m_AutoPlayDelay = 2.0f;
 
 	Queue<(string name, string text, Action onEnd)> m_DialogueQueue = new();
@@ -179,7 +179,7 @@ public class DialogueCanvas : BaseCanvas {
 		int b = text.IndexOf('}', a + 1);
 		if (IsValid(a, b)) {
 			var fullCommand = text[(a + 1)..b];
-			int c = fullCommand.    IndexOf('(');
+			int c = fullCommand.IndexOf('(');
 			int d = fullCommand.LastIndexOf(')');
 			bool isValid = IsValid(c, d);
 			end  = b + 1;
@@ -240,9 +240,12 @@ public class DialogueCanvas : BaseCanvas {
 		} else if (EnableInput) {
 			TextDisplayTimer = 0f;
 		} else {
-			UIManager.ForceBack();
+			UIManager.PopOverlay();
+			TextIndex = 0;
 		}
 	}
+
+	public override void Back() { }
 
 
 
@@ -252,7 +255,7 @@ public class DialogueCanvas : BaseCanvas {
 		EnableInput = false;	
 	}
 
-	void Update() {
+	void LateUpdate() {
 		UpdateDialogue();
 	}
 }

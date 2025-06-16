@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 
 #if UNITY_EDITOR
-	using UnityEditor;
+using UnityEditor;
 #endif
 
 
@@ -19,58 +19,43 @@ public class UIManager : MonoSingleton<UIManager> {
 	// Editor
 
 	#if UNITY_EDITOR
-		[CustomEditor(typeof(UIManager))]
-		class UIManagerEditor : EditorExtensions {
-			UIManager I => target as UIManager;
-			public override void OnInspectorGUI() {
-				Begin("UI Manager");
+	[CustomEditor(typeof(UIManager))]
+	class UIManagerEditor : EditorExtensions {
+		UIManager I => target as UIManager;
+		public override void OnInspectorGUI() {
+			Begin("UI Manager");
 
-				End();
-			}
+			End();
 		}
+	}
 	#endif
 
 
 
 	// Fields
 
-	GameCanvas      m_GameCanvas;
-	DialogueCanvas  m_DialogueCanvas;
+	GameCanvas m_GameCanvas;
+	DialogueCanvas m_DialogueCanvas;
 	InventoryCanvas m_InventoryCanvas;
 
 	BaseCanvas m_MainCanvas;
-	readonly Stack<BaseCanvas> m_OverlayCanvas = new();
+	Stack<BaseCanvas> m_OverlayCanvas = new();
 
 
 
 	// Properties
 
-	static RectTransform Transform => Instance.transform as RectTransform;
+	static GameCanvas GameCanvas =>
+		Instance.m_GameCanvas || TryGetComponentInChildren(out Instance.m_GameCanvas) ?
+		Instance.m_GameCanvas : null;
 
-	static GameCanvas GameCanvas {
-		get {
-			if (!Instance.m_GameCanvas) for (int i = 0; i < Transform.childCount; i++) {
-				if (Transform.GetChild(i).TryGetComponent(out Instance.m_GameCanvas)) break;
-			}
-			return Instance.m_GameCanvas;
-		}
-	}
-	static DialogueCanvas DialogueCanvas {
-		get {
-			if (!Instance.m_DialogueCanvas) for (int i = 0; i < Transform.childCount; i++) {
-				if (Transform.GetChild(i).TryGetComponent(out Instance.m_DialogueCanvas)) break;
-			}
-			return Instance.m_DialogueCanvas;
-		}
-	}
-	static InventoryCanvas InventoryCanvas {
-		get {
-			if (!Instance.m_InventoryCanvas) for (int i = 0; i < Transform.childCount; i++) {
-				if (Transform.GetChild(i).TryGetComponent(out Instance.m_InventoryCanvas)) break;
-			}
-			return Instance.m_InventoryCanvas;
-		}
-	}
+	static DialogueCanvas DialogueCanvas =>
+		Instance.m_DialogueCanvas || TryGetComponentInChildren(out Instance.m_DialogueCanvas) ?
+		Instance.m_DialogueCanvas : null;
+
+	static InventoryCanvas InventoryCanvas =>
+		Instance.m_InventoryCanvas || TryGetComponentInChildren(out Instance.m_InventoryCanvas) ?
+		Instance.m_InventoryCanvas : null;
 
 
 
@@ -79,7 +64,6 @@ public class UIManager : MonoSingleton<UIManager> {
 		set => Instance.m_MainCanvas = value;
 	}
 	static Stack<BaseCanvas> OverlayCanvas => Instance.m_OverlayCanvas;
-
 	public static BaseCanvas CurrentCanvas {
 		get => OverlayCanvas.TryPeek(out var overlayCanvas) ? overlayCanvas : MainCanvas;
 	}
@@ -97,28 +81,18 @@ public class UIManager : MonoSingleton<UIManager> {
 	// Methods
 
 	public static void Initialize() {
-		GameCanvas.Hide();
-		DialogueCanvas.Hide();
-		InventoryCanvas.Hide();
-	}
-
-	public static void Back() {
-		switch (CurrentCanvas) {
-			case global::GameCanvas:
-				// show menu
-				break;
-			case global::DialogueCanvas:
-				// do nothing
-				break;
-			default:
-				if (OverlayCanvas.TryPop (out var next)) next.Hide();
-				if (OverlayCanvas.TryPeek(out var prev)) prev.Show();
-				break;
+		var transform = Instance.transform;
+		for (int i = 0; i < transform.childCount; i++) {
+			if (transform.GetChild(i).TryGetComponent(out BaseCanvas canvas)) canvas.Hide();
 		}
+		MainCanvas = null;
+		OverlayCanvas.Clear();
 	}
 
-	public static void ForceBack() {
-		if (OverlayCanvas.TryPop (out var next)) next.Hide();
+	public static void Back() => CurrentCanvas?.Back();
+
+	public static void PopOverlay() {
+		if (OverlayCanvas.TryPop(out var next)) next.Hide();
 		if (OverlayCanvas.TryPeek(out var prev)) prev.Show();
 	}
 
@@ -129,23 +103,19 @@ public class UIManager : MonoSingleton<UIManager> {
 	public static void ShowGame() => ShowMainCanvas(GameCanvas);
 
 	static void ShowMainCanvas(BaseCanvas mainCanvas) {
-		if (MainCanvas) {
-			if (MainCanvas == mainCanvas) return;
-			MainCanvas.Hide();
-		}
+		if (mainCanvas == CurrentCanvas) return;
+		if (MainCanvas) MainCanvas.Hide();
 		while (OverlayCanvas.TryPop(out var canvas)) canvas.Hide();
 		MainCanvas = mainCanvas;
 		mainCanvas.Show();
 	}
 
-	public static void ShowDialogue () => ShowOverlayCanvas(DialogueCanvas);
-	public static void ShowInventory() => ShowOverlayCanvas(InventoryCanvas);
+	public static void OpenDialogue()  => OpenOverlayCanvas(DialogueCanvas);
+	public static void OpenInventory() => OpenOverlayCanvas(InventoryCanvas);
 
-	static void ShowOverlayCanvas(BaseCanvas overlayCanvas) {
-		if (OverlayCanvas.TryPeek(out var canvas)) {
-			if (canvas == overlayCanvas) return;
-			canvas.Hide(true);
-		}
+	static void OpenOverlayCanvas(BaseCanvas overlayCanvas) {
+		if (overlayCanvas == CurrentCanvas) return;
+		if (OverlayCanvas.TryPeek(out var canvas)) canvas.Hide(true);
 		OverlayCanvas.Push(overlayCanvas);
 		overlayCanvas.Show();
 	}
@@ -163,12 +133,12 @@ public class UIManager : MonoSingleton<UIManager> {
 	// Dialogue Canvas Methods
 
 	public static void EnqueueDialogue(string name, string text, Action onEnd = null) {
-		if (!DialogueCanvas.gameObject.activeSelf) ShowDialogue();
+		if (!DialogueCanvas.gameObject.activeSelf) OpenDialogue();
 		DialogueCanvas.EnqueueDialogue(name, text, onEnd);
 	}
 
 	public static void BeginDialogueInput(Action<MultimodalData> onEnd = null) {
-		if (!DialogueCanvas.gameObject.activeSelf) ShowDialogue();
+		if (!DialogueCanvas.gameObject.activeSelf) OpenDialogue();
 		DialogueCanvas.BeginDialogueInput(onEnd);
 	}
 

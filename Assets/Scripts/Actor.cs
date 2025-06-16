@@ -34,7 +34,7 @@ public abstract class Actor : MonoBehaviour {
 
 	[SerializeField] Animator m_BodyAnimator;
 	[SerializeField] Animator m_EmotionAnimator;
-	State   m_State;
+	State m_State;
 	Emotion m_Emotion;
 	List<SpriteRenderer> m_Renderers;
 
@@ -120,11 +120,6 @@ public abstract class Actor : MonoBehaviour {
 	protected virtual void Draw() { }
 
 
-
-	public void LookAt(Vector2 target) {
-		var direction = target - Body.position;
-		FlipX = direction.x < 0f;
-	}
 
 	public void LookAt(GameObject target) {
 		if (target == null) return;

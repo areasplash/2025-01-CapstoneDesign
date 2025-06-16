@@ -5,39 +5,39 @@ using System;
 using System.Linq;
 
 #if UNITY_EDITOR
-	using UnityEditor;
-	using UnityEditor.UIElements;
-	using UnityEditor.Experimental.GraphView;
+using UnityEditor;
+using UnityEditor.UIElements;
+using UnityEditor.Experimental.GraphView;
 #endif
 
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Actor | Emotion
+// Actor | Set Emotion
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[NodeMenu("Actor/Emotion")]
-public class EmotionEvent : BaseEvent {
+[NodeMenu("Actor/Set Emotion")]
+public class SetEmotionEvent : BaseEvent {
 
 	// Node
 
 	#if UNITY_EDITOR
-		public class EmotionEventNode : BaseEventNode {
-			EmotionEvent I => target as EmotionEvent;
+	public class SetEmotionEventNode : BaseEventNode {
+		SetEmotionEvent I => target as SetEmotionEvent;
 
-			public EmotionEventNode() : base() {
-				mainContainer.style.minWidth = mainContainer.style.maxWidth = DefaultSize.x;
-			}
-
-			public override void ConstructData() {
-				var instance = new ObjectField()             { value = I.instance };
-				var emotion  = new EnumField  (Emotion.None) { value = I.emotion  };
-				instance.RegisterValueChangedCallback(evt => I.instance = evt.newValue as GameObject);
-				emotion .RegisterValueChangedCallback(evt => I.emotion  = (Emotion)evt.newValue);
-				mainContainer.Add(instance);
-				mainContainer.Add(emotion);
-			}
+		public SetEmotionEventNode() : base() {
+			mainContainer.style.minWidth = mainContainer.style.maxWidth = DefaultNodeWidth;
 		}
+
+		public override void ConstructData() {
+			var instance = new ObjectField() { value = I.instance };
+			var emotion = new EnumField(Emotion.None) { value = I.emotion };
+			instance.RegisterValueChangedCallback(evt => I.instance = evt.newValue as GameObject);
+			emotion.RegisterValueChangedCallback(evt => I.emotion = (Emotion)evt.newValue);
+			mainContainer.Add(instance);
+			mainContainer.Add(emotion);
+		}
+	}
 	#endif
 
 
@@ -45,7 +45,7 @@ public class EmotionEvent : BaseEvent {
 	// Fields
 
 	public GameObject instance;
-	public Emotion    emotion;
+	public Emotion emotion;
 
 
 
@@ -57,9 +57,63 @@ public class EmotionEvent : BaseEvent {
 
 	public override void CopyFrom(BaseEvent data) {
 		base.CopyFrom(data);
-		if (data is EmotionEvent changeEmotion) {
-			instance = changeEmotion.instance;
-			emotion  = changeEmotion.emotion;
+		if (data is SetEmotionEvent setEmotion) {
+			instance = setEmotion.instance;
+			emotion = setEmotion.emotion;
+		}
+	}
+}
+
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Actor | Look At
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[NodeMenu("Actor/Look At")]
+public class LookAtEvent : BaseEvent {
+
+	// Node
+
+	#if UNITY_EDITOR
+	public class LookAtEventNode : BaseEventNode {
+		LookAtEvent I => target as LookAtEvent;
+
+		public LookAtEventNode() : base() {
+			mainContainer.style.minWidth = mainContainer.style.maxWidth = DefaultNodeWidth;
+		}
+
+		public override void ConstructData() {
+			var instance = new ObjectField() { value = I.instance };
+			var target = new ObjectField() { value = I.target };
+			instance.RegisterValueChangedCallback(evt => I.instance = evt.newValue as GameObject);
+			target.RegisterValueChangedCallback(evt => I.target = evt.newValue as GameObject);
+			mainContainer.Add(instance);
+			mainContainer.Add(target);
+		}
+	}
+	#endif
+
+
+
+	// Fields
+
+	public GameObject instance;
+	public GameObject target;
+
+
+
+	// Methods
+
+	public override void End() {
+		if (instance && instance.TryGetComponent(out Actor actor)) actor.LookAt(target);
+	}
+
+	public override void CopyFrom(BaseEvent data) {
+		base.CopyFrom(data);
+		if (data is LookAtEvent lookAt) {
+			instance = lookAt.instance;
+			target = lookAt.target;
 		}
 	}
 }
