@@ -169,20 +169,26 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	// Lifecycle
 
-	void Start() {
+	void Start()
+	{
 		var startDirectly = false;
 		//#if UNITY_EDITOR
-			startDirectly = StartDirectly;
+		startDirectly = StartDirectly;
 		//#endif
-		if (startDirectly) {
+		if (startDirectly)
+		{
 			GameState = GameState.Gameplay;
 			UIManager.Initialize();
 			UIManager.ShowGame();
-		} else {
+		}
+		else
+		{
 			GameState = GameState.Paused;
 			UIManager.Initialize();
 			//UIManager.ShowTitle();
 		}
+		
+		ServerRequestManager.Instance.RequestTextAnalysis("오늘 너무 힘들었어...");
 	}
 
 	void Update() {
