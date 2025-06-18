@@ -109,7 +109,14 @@ public abstract class Actor : MonoBehaviour {
 
 	public bool IsSimulated {
 		get => m_IsSimulated;
-		set => m_IsSimulated = value;
+		set {
+			if (m_IsSimulated != value) {
+				m_IsSimulated = value;
+				var list = new List<EventTrigger>();
+				transform.GetComponentsInChildren(true, list);
+				foreach (var trigger in list) trigger.gameObject.SetActive(value);
+			}
+		}
 	}
 
 
@@ -130,6 +137,26 @@ public abstract class Actor : MonoBehaviour {
 
 	// Methods
 
+	protected float GetDistance(GameObject target) {
+		if (target == null) return float.MaxValue;
+		var xDelta = transform.position.x - target.transform.position.x;
+		var yDelta = transform.position.y - target.transform.position.y;
+		xDelta /= GameManager.GridXMultiplier;
+		yDelta /= GameManager.GridYMultiplier;
+		return Mathf.Sqrt(xDelta * xDelta + yDelta * yDelta);
+	}
+
+	protected float GetDistanceSq(GameObject target) {
+		if (target == null) return float.MaxValue;
+		var xDelta = transform.position.x - target.transform.position.x;
+		var yDelta = transform.position.y - target.transform.position.y;
+		xDelta *= GameManager.GridYMultiplier;
+		yDelta *= GameManager.GridXMultiplier;
+		return xDelta * xDelta + yDelta * yDelta;
+	}
+
+
+
 	public void LookAt(GameObject target) {
 		if (target == null) return;
 		var direction = target.transform.position - transform.position;
@@ -142,31 +169,15 @@ public abstract class Actor : MonoBehaviour {
 		var targetPosition = target.transform.position;
 		if (0f < threshold) {
 			var distance = Vector3.Distance(sourcePosition, targetPosition);
-			targetPosition += threshold * (sourcePosition - targetPosition) / distance;
+			if (threshold < distance) {
+				targetPosition += threshold * (sourcePosition - targetPosition) / distance;
+			}
 		}
 		NavigationManager.TryGetPath(sourcePosition, targetPosition, PathPoints);
 	}
 
 	public void ClearPath() {
 		PathPoints.Clear();
-		State = State.Idle;
-	}
-
-	public float GetDistance(GameObject target) {
-		if (target == null) return float.MaxValue;
-		var xDelta = transform.position.x - target.transform.position.x;
-		var yDelta = transform.position.y - target.transform.position.y;
-		xDelta /= GameManager.GridXMultiplier;
-		yDelta /= GameManager.GridYMultiplier;
-		return Mathf.Sqrt(xDelta * xDelta + yDelta * yDelta);
-	}
-	public float GetDistanceSq(GameObject target) {
-		if (target == null) return float.MaxValue;
-		var xDelta = transform.position.x - target.transform.position.x;
-		var yDelta = transform.position.y - target.transform.position.y;
-		xDelta *= GameManager.GridYMultiplier;
-		yDelta *= GameManager.GridXMultiplier;
-		return xDelta * xDelta + yDelta * yDelta;
 	}
 
 
@@ -177,10 +188,7 @@ public abstract class Actor : MonoBehaviour {
 	protected virtual void Act() {
 		if (PathPoints.TryPeek(out var point)) {
 			MoveVector = (((Vector2)point - Body.position) / GameManager.GridMultiplier).normalized;
-			State = State.Moving;
-			FlipX = MoveVector.x != 0f ? MoveVector.x < 0f : FlipX;
 			Body.linearVelocity = GameManager.GridMultiplier * MoveVector * Speed;
-			MoveVector = default;
 
 			if (Vector2.Distance(Body.position, point) < 0.1f) {
 				PathPoints.Dequeue();
@@ -190,13 +198,16 @@ public abstract class Actor : MonoBehaviour {
 	}
 
 	protected virtual void Draw() {
+		State = 0.01f < MoveVector.sqrMagnitude ? State.Moving : State.Idle;
+		FlipX = MoveVector.x != 0f ? MoveVector.x < 0f : FlipX;
+		MoveVector = default;
 	}
 
 
 
 	// Lifecycle
 
-	void OnEnable()  => Actors.Add(this);
+	void OnEnable() => Actors.Add(this);
 	void OnDisable() => Actors.Remove(this);
 
 	void Update() {

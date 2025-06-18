@@ -93,10 +93,7 @@ public class Player : Actor {
 	protected override void Act() {
 		base.Act();
 		if (PathPoints.Count == 0) {
-			State = MoveVector == default ? State.Idle : State.Moving;
-			FlipX = MoveVector.x != 0f ? MoveVector.x < 0f : FlipX;
 			Body.linearVelocity = GameManager.GridMultiplier * MoveVector * Speed;
-			MoveVector = default;
 		}
 	}
 }

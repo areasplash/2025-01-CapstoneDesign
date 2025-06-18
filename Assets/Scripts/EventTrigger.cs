@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Events;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -58,6 +60,8 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 			if (I.UseCooldown) I.Cooldown = FloatField(I.Cooldown);
 			EndHorizontal();
 			Space();
+			PropertyField("m_OnInteract");
+			Space();
 
 			End();
 		}
@@ -93,6 +97,8 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 	[SerializeField] int m_Count;
 	[SerializeField] float m_Cooldown;
 	float m_Timer;
+
+	[SerializeField] UnityEvent m_OnInteract = new();
 
 
 
@@ -137,12 +143,15 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 
 	public bool IsInteractable => (!UseCountLimit || 0 < Count) && (!UseCooldown || Timer <= 0f);
 
+	public UnityEvent OnInteract => m_OnInteract;
+
 
 
 	// Methods
 
 	public void Interact(GameObject interactor) {
 		if (IsInteractable) {
+			OnInteract.Invoke();
 			GameManager.PlayEvent(Event);
 			if (UseCountLimit) Count--;
 			if (UseCooldown) Timer = Cooldown;

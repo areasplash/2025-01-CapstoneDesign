@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Events;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -42,12 +44,19 @@ public class Minsu : Actor {
 
 
 
+	// Constants
+
+	const float CommunicationRange = 4f;
+
+
+
 	// Fields
 
 	[SerializeField] GameObject m_Event;
 	[SerializeField] float m_EventProbability = 0.2f;
 	[SerializeField] float m_EventInterval = 1f;
 	[SerializeField] float m_SearchRange = 8f;
+	int m_EventState;
 	float m_Timer;
 	Actor m_Target;
 
@@ -71,6 +80,10 @@ public class Minsu : Actor {
 		get => m_SearchRange;
 		set => m_SearchRange = value;
 	}
+	int EventState {
+		get => m_EventState;
+		set => m_EventState = value;
+	}
 	float Timer {
 		get => m_Timer;
 		set => m_Timer = value;
@@ -88,53 +101,94 @@ public class Minsu : Actor {
 
 	protected override void Simulate() {
 		Timer -= Time.deltaTime;
-		if (!Target) {
-			if (Timer <= 0f) {
-				Timer = EventInterval;
-				if (Random.value < EventProbability) {
-					float distance = SearchRange;
-					foreach (var actor in Actors) {
-						if (actor == this || actor is Player || !actor.IsSimulated) continue;
-						float s = GetDistance(actor.gameObject);
-						if (s < distance) {
-							distance = s;
-							Target = actor;
+		switch (EventState) {
+
+			case 0:
+				if (Timer <= 0f) {
+					Timer = EventInterval;
+					if (Random.value < EventProbability) {
+						Target = SearchTarget(SearchRange);
+						if (Target) {
+							Timer = 10f;
+							Target.IsSimulated = false;
+							CalculatePath(Target.gameObject);
+							Target.CalculatePath(gameObject);
+							EventState = 1;
 						}
 					}
-					if (Target) {
-						Target.IsSimulated = false;
-						CalculatePath(Target.gameObject);
-						Target.CalculatePath(gameObject);
+				}
+				break;
+
+			case 1:
+				if (Timer <= 0f) {
+					Timer = EventInterval;
+					ClearPath();
+					Target.ClearPath();
+					Target.IsSimulated = true;
+					Target = null;
+					EventState = 0;
+				} else {
+					if (GetDistance(Target.gameObject) < CommunicationRange) {
 						Timer = 10f;
+						ClearPath();
+						Target.ClearPath();
+						BeginCommunication(Target);
+						EventState = 2;
+						if (Event.TryGetComponent(out EventTrigger trigger)) {
+							trigger.OnInteract.AddListener(() => {
+								trigger.OnInteract.RemoveAllListeners();
+								Timer = EventInterval;
+								EndCommunication(Target);
+								Target.IsSimulated = true;
+								Target = null;
+								EventState = 3;
+							});
+						}
 					}
 				}
-			}
-		} else {
-			float s = GetDistance(Target.gameObject);
-			if (4f < s && Timer <= 0f) {
-				Target.IsSimulated = true;
-				Target = null;
-			}
-			if (s < 4f && 0f <= Timer) {
-				ClearPath();
-				LookAt(Target.gameObject);
-				Target.ClearPath();
-				Target.LookAt(gameObject);
-				Emotion = Target.Emotion = Emotion.Thinking;
-				Timer = 0f;
-				Event.gameObject.SetActive(true);
-				var a = transform.position;
-				var b = Target.transform.position;
-				Event.transform.position = Vector3.Lerp(a, b, 0.5f);
-			}
-			if (s < 4f && Timer < -10f) {
-				Target.IsSimulated = true;
-				Emotion = Target.Emotion = Emotion.None;
-				Target = null;
-				Timer = EventInterval;
-				Event.gameObject.SetActive(false);
-			}
+				break;
 
+			case 2:
+				if (Timer <= 0f) {
+					Timer = EventInterval;
+					EndCommunication(Target);
+					Target.IsSimulated = true;
+					Target = null;
+					EventState = 0;
+				}
+				break;
 		}
+	}
+
+
+
+	Actor SearchTarget(float range) {
+		Actor target = null;
+		foreach (var actor in Actors) {
+			if (actor == this || actor is Player || !actor.IsSimulated) continue;
+			float distance = GetDistance(actor.gameObject);
+			if (distance < range) {
+				range = distance;
+				target = actor;
+			}
+		}
+		return target;
+	}
+
+	void BeginCommunication(Actor target) {
+		Emotion = target.Emotion = Emotion.Thinking;
+		LookAt(target.gameObject);
+		target.LookAt(gameObject);
+		Event.gameObject.SetActive(true);
+		var a = transform.position;
+		var b = target.transform.position;
+		Event.transform.position = Vector3.Lerp(a, b, 0.5f);
+		EventState = 2;
+	}
+
+	void EndCommunication(Actor target) {
+		Emotion = target.Emotion = Emotion.None;
+		Event.gameObject.SetActive(false);
+		EventState = 0;
 	}
 }
