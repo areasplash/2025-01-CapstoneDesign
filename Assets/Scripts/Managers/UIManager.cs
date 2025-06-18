@@ -141,12 +141,4 @@ public class UIManager : MonoSingleton<UIManager> {
 		if (!DialogueCanvas.gameObject.activeSelf) OpenDialogue();
 		DialogueCanvas.BeginDialogueInput(onEnd);
 	}
-
-
-
-	// Lifecycle
-
-	void Update() {
-		
-	}
 }

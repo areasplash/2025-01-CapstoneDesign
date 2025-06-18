@@ -6,7 +6,7 @@ using UnityEditor;
 
 
 
-// ━
+// Trigger Types
 
 public enum TriggerType {
 	OnInteract,
@@ -36,9 +36,9 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 			I.Event = ObjectField("Event Graph", I.Event);
 			if (I.Event == null && Button("Create Event Graph")) {
 				I.Event = CreateInstance<EventGraphSO>();
-				I.Event.name = I.gameObject.name;
 			}
 			if (I.Event != null && Button("Open Event Graph")) {
+				I.Event.name = I.gameObject.name;
 				I.Event.Open();
 			}
 			Space();
@@ -87,7 +87,7 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 	// Fields
 
 	[SerializeField] EventGraphSO m_Event;
-	[SerializeField] InteractionType m_InteractionType;
+	[SerializeField] InteractionType m_InteractableType;
 	[SerializeField] TriggerType m_TriggerType;
 	[SerializeField] bool m_PlayerOnly = true;
 	[SerializeField] int m_Count;
@@ -103,8 +103,8 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 		set => m_Event = value;
 	}
 	public InteractionType InteractionType {
-		get => m_InteractionType;
-		set => m_InteractionType = value;
+		get => m_InteractableType;
+		set => m_InteractableType = value;
 	}
 	public TriggerType TriggerType {
 		get => m_TriggerType;
@@ -116,7 +116,7 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 	}
 	public bool UseCountLimit {
 		get => 0 <= m_Count;
-		set => m_Count = value ? Mathf.Max(0, m_Count) : -1;
+		set => m_Count = value ? Mathf.Max(1, m_Count) : -1;
 	}
 	public int Count {
 		get => m_Count;
@@ -135,12 +135,14 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 		set => m_Timer = value;
 	}
 
+	public bool IsInteractable => (!UseCountLimit || 0 < Count) && (!UseCooldown || Timer <= 0f);
+
 
 
 	// Methods
 
 	public void Interact(GameObject interactor) {
-		if ((!UseCountLimit || 0 < Count) && (!UseCooldown || Timer <= 0f)) {
+		if (IsInteractable) {
 			GameManager.PlayEvent(Event);
 			if (UseCountLimit) Count--;
 			if (UseCooldown) Timer = Cooldown;

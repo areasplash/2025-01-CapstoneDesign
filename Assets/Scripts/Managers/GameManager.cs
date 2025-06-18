@@ -7,7 +7,7 @@ using UnityEditor;
 
 
 
-// ━
+// Game States
 
 public enum GameState : byte {
 	None,
@@ -63,6 +63,8 @@ public class GameManager : MonoSingleton<GameManager> {
 	readonly List<BaseEvent> m_ActiveEvents = new();
 	readonly List<float> m_EventElapsed = new();
 
+	Player m_Player;
+
 	[SerializeField] int m_Gem;
 
 
@@ -89,6 +91,8 @@ public class GameManager : MonoSingleton<GameManager> {
 	static List<float> EventElapsed => Instance.m_EventElapsed;
 
 
+
+	public static Player Player => Instance.m_Player ??= FindAnyObjectByType<Player>();
 
 	public static int Gem {
 		get => Instance.m_Gem;

@@ -182,12 +182,12 @@ public class DialogueCanvas : BaseCanvas {
 			int c = fullCommand.IndexOf('(');
 			int d = fullCommand.LastIndexOf(')');
 			bool isValid = IsValid(c, d);
-			end  = b + 1;
+			end = b + 1;
 			func = isValid ? fullCommand[..c] : fullCommand;
 			args = isValid ? fullCommand[(c + 1)..d].Split(',') : null;
 			return true;
 		} else {
-			end  = -1;
+			end = -1;
 			func = null;
 			args = null;
 			return false;
@@ -212,7 +212,7 @@ public class DialogueCanvas : BaseCanvas {
 				if (flag && TryGetFunction(text, TextIndex, out int end, out var func, out var args)) {
 					bool isArgsValid = args != null && 0 < args.Length;
 					switch (func) {
-						case "Sleep":
+						case "Delay":
 							if (isArgsValid && float.TryParse(args[0], out float delay)) {
 								TextDisplayTimer = delay;
 							}

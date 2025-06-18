@@ -42,6 +42,11 @@ public class GameCanvas : BaseCanvas {
 				PropertyField("Num9Sprite");
 			}
 			Space();
+			LabelField("Interactable Text", EditorStyles.boldLabel);
+			I.InteractableTransform = ObjectField("Interactable Transform", I.InteractableTransform);
+			I.InteractableNameUGUI  = ObjectField("Interactable Name UGUI", I.InteractableNameUGUI);
+			I.InteractableTypeUGUI  = ObjectField("Interactable Type UGUI", I.InteractableTypeUGUI);
+			Space();
 			LabelField("Gem Collect Message", EditorStyles.boldLabel);
 			I.MessageTransform      = ObjectField("Message Transform",       I.MessageTransform);
 			I.MessageIconImage      = ObjectField("Message Icon Image",      I.MessageIconImage);
@@ -80,6 +85,10 @@ public class GameCanvas : BaseCanvas {
 
 	// Fields
 
+	[SerializeField] RectTransform m_InteractableTransform;
+	[SerializeField] TextMeshProUGUI m_InteractableNameUGUI;
+	[SerializeField] TextMeshProUGUI m_InteractableTypeUGUI;
+
 	[SerializeField] RectTransform m_MessageTransform;
 	[SerializeField] Image m_MessageIconImage;
 	[SerializeField] RectTransform m_MessageValueTransform;
@@ -91,6 +100,21 @@ public class GameCanvas : BaseCanvas {
 
 
 	// Properties
+
+	RectTransform InteractableTransform {
+		get => m_InteractableTransform;
+		set => m_InteractableTransform = value;
+	}
+	TextMeshProUGUI InteractableNameUGUI {
+		get => m_InteractableNameUGUI;
+		set => m_InteractableNameUGUI = value;
+	}
+	TextMeshProUGUI InteractableTypeUGUI {
+		get => m_InteractableTypeUGUI;
+		set => m_InteractableTypeUGUI = value;
+	}
+
+
 
 	RectTransform MessageTransform {
 		get => m_MessageTransform;
@@ -199,10 +223,39 @@ public class GameCanvas : BaseCanvas {
 	// Lifecycle
 
 	void Start() {
+		InteractableTransform.gameObject.SetActive(false);
 		MessageTransform.gameObject.SetActive(false);
 	}
 
 	void LateUpdate() {
+		var (gameObject, interactable) = GameManager.Player.GetNearestInteractable();
+		bool match = true;
+		match &= interactable != null && interactable.IsInteractable;
+		match &= GameManager.GameState == GameState.Gameplay;
+		if (match) {
+			InteractableTransform.gameObject.SetActive(true);
+			var aWorldPos = GameManager.Player.transform.position;
+			var bWorldPos = gameObject.transform.position;
+			var aScreenPos = CameraManager.MainCamera.WorldToScreenPoint(aWorldPos);
+			var bScreenPos = CameraManager.MainCamera.WorldToScreenPoint(bWorldPos);
+			var namePos = bScreenPos + new Vector3(0f, 150f, 0f);
+			InteractableNameUGUI.rectTransform.position = namePos;
+			InteractableNameUGUI.text = gameObject.name switch {
+				"Yejin"  => "예진",
+				"Minsu"  => "민수",
+				"People" => "사람들",
+				_ => gameObject.name,
+			};
+			var typePos = Vector3.Lerp(aScreenPos, bScreenPos, 0.5f) + new Vector3(0f, -50f, 0f);
+			InteractableTypeUGUI.rectTransform.position = typePos;
+			InteractableTypeUGUI.text = interactable.InteractionType switch {
+				InteractionType.Talk => "말하기",
+				_ => "상호작용",
+			};
+		} else {
+			InteractableTransform.gameObject.SetActive(false);
+		}
+
 		if (0f < MessageTimer) {
 			MessageTimer = Mathf.Max(0f, MessageTimer - Time.deltaTime);
 			if (MessageTimer == 0f) MessageTransform.gameObject.SetActive(false);

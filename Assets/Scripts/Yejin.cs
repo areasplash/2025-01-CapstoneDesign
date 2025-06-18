@@ -34,11 +34,4 @@ public class Yejin : Actor {
 	}
 	#endif
 
-
-
-	// Fields
-
-
-
-	// Properties
 }

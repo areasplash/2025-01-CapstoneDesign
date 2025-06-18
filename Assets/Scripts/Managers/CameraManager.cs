@@ -50,7 +50,7 @@ public class CameraManager : MonoSingleton<CameraManager> {
 		set => Instance.transform.position = value;
 	}
 
-	static Camera MainCamera =>
+	public static Camera MainCamera =>
 		Instance.m_MainCamera || TryGetComponentInChildren(out Instance.m_MainCamera) ?
 		Instance.m_MainCamera : null;
 

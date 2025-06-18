@@ -102,6 +102,11 @@ public abstract class BaseEvent {
 					port.portColor = new Color(0.0f, 0.8f, 1.0f);
 					port.portName = input ? "In" : "Out";
 					break;
+				case PortType.MultimodalData:
+					port = InstantiatePort(Horizontal, direction, Port.Capacity.Multi, null);
+					port.portColor = new Color(0.8f, 0.2f, 0.8f);
+					port.portName = input ? "In" : "Out";
+					break;
 			}
 			if (port != null) {
 				port.userData = type;
