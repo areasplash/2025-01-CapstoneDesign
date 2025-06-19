@@ -802,12 +802,11 @@ public class ValidateAnswerEvent : BaseEvent {
 		}
 
 		public override void ConstructPort() {
-			CreatePort(Direction.Input );
+			CreatePort(Direction.Input);
 			CreatePort(Direction.Input, PortType.MultimodalData);
-			var pass = CreatePort(Direction.Output);
-			var fail = CreatePort(Direction.Output);
-			pass.portName = "True";
-			fail.portName = "False";
+			CreatePort(Direction.Output).portName = "True";
+			CreatePort(Direction.Output).portName = "False";
+			CreatePort(Direction.Output).portName = "Exception";
 			RefreshExpandedState();
 			RefreshPorts();
 		}
@@ -822,6 +821,7 @@ public class ValidateAnswerEvent : BaseEvent {
 
 	float timer;
 	bool isValid;
+	bool isException;
 
 
 
@@ -856,7 +856,7 @@ public class ValidateAnswerEvent : BaseEvent {
 	public override void GetNext(List<BaseEvent> list) {
 		list ??= new();
 		list.Clear();
-		int index = isValid ? 0 : 1;
+		int index = isException ? 2 : (isValid ? 0 : 1);
 		foreach (var next in next) if (next.oPortType == PortType.Default) {
 			if (next.oPort == index) list.Add(next.data);
 		}

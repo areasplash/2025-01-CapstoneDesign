@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using System;
 
 #if UNITY_EDITOR
@@ -51,6 +52,9 @@ public class InputManager : MonoSingleton<InputManager> {
 		public override void OnInspectorGUI() {
 			Begin("Input Manager");
 
+			LabelField("Web Cam", EditorStyles.boldLabel);
+			RawImage = ObjectField("Web Cam Image", RawImage);
+			Space();
 			LabelField("Debug", EditorStyles.boldLabel);
 			BeginDisabledGroup();
 			var actionMap = Application.isPlaying ? PlayerInput.currentActionMap.name : "None";
@@ -65,6 +69,12 @@ public class InputManager : MonoSingleton<InputManager> {
 
 
 
+	// Constants
+
+	const float WebCamUpdateInterval = 10f;
+
+
+
 	// Fields
 
 	PlayerInput m_PlayerInput;
@@ -75,6 +85,10 @@ public class InputManager : MonoSingleton<InputManager> {
 	Vector2 m_PointPosition;
 	Vector2 m_ScrollWheel;
 	Vector2 m_Navigate;
+
+	WebCamTexture m_WebCamTexture;
+	Texture2D m_CachedWebCamTexture;
+	[SerializeField] RawImage m_RawImage;
 
 
 
@@ -111,6 +125,21 @@ public class InputManager : MonoSingleton<InputManager> {
 	public static Vector2 Navigate {
 		get         => Instance.m_Navigate;
 		private set => Instance.m_Navigate = value;
+	}
+
+
+
+	static WebCamTexture WebCamTexture {
+		get => Instance.m_WebCamTexture;
+		set => Instance.m_WebCamTexture = value;
+	}
+	public static Texture2D CachedWebCamTexture {
+		get => Instance.m_CachedWebCamTexture;
+		set => Instance.m_CachedWebCamTexture = value;
+	}
+	static RawImage RawImage {
+		get => Instance.m_RawImage;
+		set => Instance.m_RawImage = value;
 	}
 
 
@@ -152,12 +181,8 @@ public class InputManager : MonoSingleton<InputManager> {
 	public static void SwitchActionMap(ActionMap actionMap) {
 		if (InputActionAsset == null) return;
 		PlayerInput.currentActionMap = InputActionAsset.FindActionMap(actionMap.ToString());
-		KeyNext = 0u;
-		KeyPrev = 0u;
-		MoveDirection = Vector2.zero;
-		PointPosition = Vector2.zero;
-		ScrollWheel   = Vector2.zero;
-		Navigate      = Vector2.zero;
+		MoveDirection = PointPosition = ScrollWheel = Navigate = default;
+		KeyNext = KeyPrev = default;
 	}
 
 
@@ -165,4 +190,20 @@ public class InputManager : MonoSingleton<InputManager> {
 	// Lifecycle
 
 	void Start() => RegisterActionMap();
+
+	void Update() {
+		float time = Time.realtimeSinceStartup;
+		if ((time + Time.unscaledDeltaTime) % WebCamUpdateInterval < time % WebCamUpdateInterval) {
+			if (!WebCamTexture && 0 < WebCamTexture.devices.Length) {
+				WebCamTexture = new WebCamTexture(WebCamTexture.devices[0].name);
+				WebCamTexture.Play();
+			}
+			if (WebCamTexture) {
+				CachedWebCamTexture ??= new Texture2D(WebCamTexture.width, WebCamTexture.height);
+				CachedWebCamTexture.SetPixels(WebCamTexture.GetPixels());
+				CachedWebCamTexture.Apply();
+				if (RawImage) RawImage.material.mainTexture = CachedWebCamTexture;
+			}
+		}
+	}
 }
