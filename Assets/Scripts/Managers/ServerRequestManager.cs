@@ -17,23 +17,24 @@ public class ServerRequestManager : MonoBehaviour
     }
 
     // 텍스트 분석 요청 함수
-    public void RequestTextAnalysis(string inputText) {
-        StartCoroutine(PostText(inputText));
+    public void RequestTextAnalysis(string inputText, System.Action<AnalysisResponse> callback) {
+        StartCoroutine(PostText(inputText, callback));
     }
     
     // 음성 분석 요청 함수
-    public void RequestVoiceAnalysis(byte[] audioData, string filename) {
-        StartCoroutine(PostVoice(audioData, filename));
+    public void RequestVoiceAnalysis(byte[] audioData, string filename, System.Action<AnalysisResponse> callback) {
+        StartCoroutine(PostVoice(audioData, filename, callback));
     }
 
     // 이미지 분석 요청 함수
-    public void RequestImageAnalysis(byte[] imageData, string filename) {
-        StartCoroutine(PostImage(imageData, filename));
+    public void RequestImageAnalysis(Texture2D image, System.Action<AnalysisResponse> callback) {
+        byte[] imageBytes = image.EncodeToPNG();
+        PostImage(imageBytes, "webcam.png", callback);
     }
 
 
     // 서버로 텍스트를 POST하고 응답 로그 출력
-    private IEnumerator PostText(string input)
+    private IEnumerator PostText(string input, System.Action<AnalysisResponse> callback)
     {
         // 로컬 테스트 서버 활용 -> 클라우드에 올린 후 수정 필요
         string url = "https://[test_server]:8000/analyze/text";
@@ -61,7 +62,7 @@ public class ServerRequestManager : MonoBehaviour
             string responseText = request.downloadHandler.text;
             Debug.Log($"전체 응답 내용: {responseText}");
 
-            AnalysisResponse parsed = JsonUtility.FromJson<TextAnalysisResponse>(responseText);
+            AnalysisResponse parsed = JsonUtility.FromJson<AnalysisResponse>(responseText);
             Debug.Log("감정: " + parsed.emotion_result.emotion);
             Debug.Log("GPT: " + parsed.openai_output.content);
 
@@ -74,7 +75,7 @@ public class ServerRequestManager : MonoBehaviour
         }
     }
 
-    private IEnumerator PostVoice(byte[] audioData, string filename) {
+    private IEnumerator PostVoice(byte[] audioData, string filename, System.Action<AnalysisResponse> callback) {
         string url = "https://[test_server]:8000/analyze/audio";
 
         WWWForm form = new WWWForm();
@@ -92,7 +93,7 @@ public class ServerRequestManager : MonoBehaviour
             string responseText = request.downloadHandler.text;
             Debug.Log($"전체 응답 내용: {responseText}");
 
-            AnalysisResponse parsed = JsonUtility.FromJson<TextAnalysisResponse>(responseText);
+            AnalysisResponse parsed = JsonUtility.FromJson<AnalysisResponse>(responseText);
             Debug.Log("감정: " + parsed.emotion_result.emotion);
             Debug.Log("GPT: " + parsed.openai_output.content);
             
@@ -105,7 +106,7 @@ public class ServerRequestManager : MonoBehaviour
         }
     }
 
-    private IEnumerator PostImage(byte[] imageData, string filename) {
+    private IEnumerator PostImage(byte[] imageData, string filename, System.Action<AnalysisResponse> callback) {
         string url = "https://[test_server]:8000/analyze/image";
 
         WWWForm form = new WWWForm();
@@ -123,7 +124,7 @@ public class ServerRequestManager : MonoBehaviour
             string responseText = request.downloadHandler.text;
             Debug.Log($"전체 응답 내용: {responseText}");
 
-            AnalysisResponse parsed = JsonUtility.FromJson<TextAnalysisResponse>(responseText);
+            AnalysisResponse parsed = JsonUtility.FromJson<AnalysisResponse>(responseText);
             Debug.Log("감정: " + parsed.emotion_result.emotion);
             Debug.Log("GPT: " + parsed.openai_output.content);
             

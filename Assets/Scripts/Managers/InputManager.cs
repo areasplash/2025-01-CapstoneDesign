@@ -198,11 +198,27 @@ public class InputManager : MonoSingleton<InputManager> {
 				WebCamTexture = new WebCamTexture(WebCamTexture.devices[0].name);
 				WebCamTexture.Play();
 			}
-			if (WebCamTexture) {
+			if (WebCamTexture)
+			{
 				CachedWebCamTexture ??= new Texture2D(WebCamTexture.width, WebCamTexture.height);
 				CachedWebCamTexture.SetPixels(WebCamTexture.GetPixels());
 				CachedWebCamTexture.Apply();
 				if (RawImage) RawImage.material.mainTexture = CachedWebCamTexture;
+				
+				ServerRequestManager.Instance.RequestImageAnalysis(CachedWebCamTexture, (result) => {
+					if (result != null) {
+						Debug.Log("분석 감정: " + result.emotion_result.emotion);
+						if (result.emotion_result.emotion == "sadness" || result.emotion_result.emotion == "anger") {
+							GameManager.Instance.m_Negative = true;
+						}
+						else {
+							GameManager.Instance.m_Negative = false;
+						}
+					}
+					else {
+						Debug.LogWarning("이미지 분석 실패!");
+					}
+            	});
 			}
 		}
 	}

@@ -66,20 +66,25 @@ public class GameManager : MonoSingleton<GameManager> {
 	Player m_Player;
 
 	[SerializeField] int m_Gem;
+	public bool m_Negative = false;
 
 
 
 	// Properties
 
-	public static GameState GameState {
+	public static GameState GameState
+	{
 		get => Instance.m_GameState;
-		set {
-			if (Instance.m_GameState != value) {
+		set
+		{
+			if (Instance.m_GameState != value)
+			{
 				Instance.m_GameState = value;
-				InputManager.SwitchActionMap(value switch {
+				InputManager.SwitchActionMap(value switch
+				{
 					GameState.Gameplay => ActionMap.Player,
 					GameState.Cutscene => ActionMap.UI,
-					GameState.Paused   => ActionMap.UI,
+					GameState.Paused => ActionMap.UI,
 					_ => default,
 				});
 			}
