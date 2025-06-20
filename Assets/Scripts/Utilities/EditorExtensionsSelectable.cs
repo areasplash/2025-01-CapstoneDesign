@@ -6,17 +6,18 @@ using Unity.Mathematics;
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.UI;
 #endif
 
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Editor Extensions
+// Editor Extensions Selectable
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 #if UNITY_EDITOR
 [CanEditMultipleObjects]
-public class EditorExtensions : Editor {
+public class EditorExtensionsSelectable : SelectableEditor {
 
 	// Initialization Methods
 

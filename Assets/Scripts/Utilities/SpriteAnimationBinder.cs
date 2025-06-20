@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 #if UNITY_EDITOR
-	using UnityEditor;
+using UnityEditor;
 #endif
 
 
@@ -18,15 +18,15 @@ public class SpriteAnimationBinder : MonoBehaviour {
 	// Editor
 
 	#if UNITY_EDITOR
-		[CustomEditor(typeof(SpriteAnimationBinder))]
-		class SpriteAnimationBinderEditor : EditorExtensions {
-			SpriteAnimationBinder I => target as SpriteAnimationBinder;
-			public override void OnInspectorGUI() {
-				Begin("Sprite Animation Binder");
+	[CustomEditor(typeof(SpriteAnimationBinder))]
+	class SpriteAnimationBinderEditor : EditorExtensions {
+		SpriteAnimationBinder I => target as SpriteAnimationBinder;
+		public override void OnInspectorGUI() {
+			Begin("Sprite Animation Binder");
 
-				End();
-			}
+			End();
 		}
+	}
 	#endif
 
 
@@ -34,14 +34,14 @@ public class SpriteAnimationBinder : MonoBehaviour {
 	// Fields
 
 	SpriteRenderer m_Renderer; 
-	Image          m_Image;
+	Image m_Image;
 
 
 
 	// Properties
 
 	SpriteRenderer Renderer => m_Renderer || TryGetComponent(out m_Renderer) ? m_Renderer : null;
-	Image          Image    => m_Image    || TryGetComponent(out m_Image   ) ? m_Image    : null;
+	Image Image => m_Image || TryGetComponent(out m_Image) ? m_Image : null;
 
 
 
@@ -54,7 +54,7 @@ public class SpriteAnimationBinder : MonoBehaviour {
 			Image.SetNativeSize();
 			Image.rectTransform.pivot = new Vector2(
 				Image.sprite.pivot.x / Image.sprite.rect.width,
-                Image.sprite.pivot.y / Image.sprite.rect.height
+				Image.sprite.pivot.y / Image.sprite.rect.height
 			);
 		}
 	}

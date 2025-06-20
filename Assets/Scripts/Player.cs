@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 #if UNITY_EDITOR
-	using UnityEditor;
+using UnityEditor;
 #endif
 
 
@@ -16,67 +16,84 @@ public class Player : Actor {
 	// Editor
 
 	#if UNITY_EDITOR
-		[CustomEditor(typeof(Player))]
-		class PlayerEditor : EditorExtensions {
-			Player I => target as Player;
-			public override void OnInspectorGUI() {
-				Begin("Player");
+	[CustomEditor(typeof(Player))]
+	class PlayerEditor : EditorExtensions {
+		Player I => target as Player;
+		public override void OnInspectorGUI() {
+			Begin("Player");
 
-				LabelField("Animator", EditorStyles.boldLabel);
-				I.BodyAnimator    = ObjectField("Body Animator",    I.BodyAnimator);
-				I.EmotionAnimator = ObjectField("Emotion Animator", I.EmotionAnimator);
-				Space();
-				LabelField("Physics", EditorStyles.boldLabel);
-				I.Speed = FloatField("Speed", I.Speed);
-				Space();
+			LabelField("Animator", EditorStyles.boldLabel);
+			I.BodyAnimator    = ObjectField("Body Animator",    I.BodyAnimator);
+			I.EmotionAnimator = ObjectField("Emotion Animator", I.EmotionAnimator);
+			Space();
+			LabelField("Physics", EditorStyles.boldLabel);
+			I.Speed = FloatField("Speed", I.Speed);
+			Space();
 
-				End();
-			}
+			End();
 		}
+	}
 	#endif
+
+
+
+	// Fields
+
+	List<GameObject> m_NearObjects = new();
 
 
 
 	// Properties
 
-	public bool IsInteractable => 0 < list.Count;
+	protected List<GameObject> NearObjects => m_NearObjects;
 
 
 
 	// Methods
 
-	readonly List<GameObject> list = new();
-	void FixedUpdate() => list.Clear();
-	void OnTriggerStay2D(Collider2D other) => list.Add(other.gameObject);
+	void FixedUpdate() => NearObjects.Clear();
+	void OnTriggerStay2D(Collider2D other) => NearObjects.Add(other.gameObject);
 
-	public IInteractable GetInteractable() {
-		if (list.Count == 0) return null;
-		float closest = float.MaxValue;
-		var closestObject = default(GameObject);
-		foreach (var gameObject in list) {
-			if (gameObject == null) continue;
-			float xdelta = transform.position.x - gameObject.transform.position.x;
-			float ydelta = transform.position.y - gameObject.transform.position.y;
-			float distancesq = xdelta * xdelta + ydelta * ydelta;
-			if (distancesq < closest) {
-				closest = distancesq;
-				closestObject = gameObject;
+	public (GameObject, IInteractable) GetNearestInteractable() {
+		if (NearObjects.Count == 0) return (null, null);
+		float distancesq = float.MaxValue;
+		var gameObject = default(GameObject);
+		var interactable = default(IInteractable);
+		var stack = new Stack<Transform>();
+
+		foreach (var nearObject in NearObjects) {
+			stack.Push(nearObject.transform);
+			var i = default(IInteractable);
+			while (0 < stack.Count) {
+				var transform = stack.Pop();
+				if (transform.TryGetComponent(out i)) break;
+				foreach (Transform child in transform) stack.Push(child);
+			}
+			if (i != null) {
+				float sq = GetDistanceSq(nearObject);
+				if (sq < distancesq) {
+					distancesq = sq;
+					gameObject = nearObject;
+					interactable = i;
+				}
 			}
 		}
-		return closestObject.TryGetComponent(out IInteractable interactable) ? interactable : null;
+		return (gameObject, interactable);
 	}
 
 
 
 	protected override void Simulate() {
 		MoveVector = InputManager.MoveDirection;
-		if (InputManager.GetKeyDown(KeyAction.Interact)) GetInteractable()?.Interact(gameObject);
+		if (InputManager.GetKeyDown(KeyAction.Interact)) {
+			GetNearestInteractable().Item2?.Interact(gameObject);
+		}
 	}
 
 	protected override void Act() {
-		State = MoveVector == default ? State.Idle : State.Moving;
-		FlipX = MoveVector.x < 0f;
-		Body.linearVelocity = GameManager.GridMultiplier * MoveVector * Speed;
-		MoveVector = default;
+		base.Act();
+		if (PathPoints.Count == 0) {
+			Body.linearVelocity = GameManager.GridMultiplier * MoveVector * Speed;
+		}
 	}
 }

@@ -5,8 +5,9 @@ using UnityEngine;
 // ━
 
 public enum InteractionType {
-	None,
+	Interact,
 	Talk,
+	Listen,
 }
 
 
@@ -16,6 +17,16 @@ public enum InteractionType {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 public interface IInteractable {
+
+	// Properties
+
 	public InteractionType InteractionType { get; }
+
+	public bool IsInteractable { get; }
+
+
+
+	// Methods
+
 	public void Interact(GameObject interactor);
 }

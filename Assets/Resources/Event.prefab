@@ -46,9 +46,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Event: {fileID: 0}
+  m_InteractableType: 0
   m_TriggerType: 0
+  m_PlayerOnly: 1
   m_Count: -1
-  m_Timer: -1
+  m_Cooldown: -1
 --- !u!60 &3065775531400733525
 PolygonCollider2D:
   m_ObjectHideFlags: 0

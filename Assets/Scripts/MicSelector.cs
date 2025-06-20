@@ -1,32 +1,41 @@
 using UnityEngine;
-
+using System.Linq;
 using TMPro;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Inventory Canvas
+// Microphone Selector
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[AddComponentMenu("UI/Inventory Canvas")]
-public class InventoryCanvas : BaseCanvas {
+[AddComponentMenu("UI/Mic Selector")]
+[RequireComponent(typeof(TMP_Dropdown))]
+public class MicSelector : MonoBehaviour {
 
-	// Editor
+	// Fields
 
-	#if UNITY_EDITOR
-	[CustomEditor(typeof(InventoryCanvas))]
-	class InventoryCanvasEditor : EditorExtensions {
-		InventoryCanvas I => target as InventoryCanvas;
-		public override void OnInspectorGUI() {
-			Begin("Inventory Canvas");
+	TMP_Dropdown m_Dropdown;
 
-			End();
-		}
-		}
-	#endif
 
+
+	// Properties
+
+	TMP_Dropdown Dropdown => m_Dropdown || TryGetComponent(out m_Dropdown) ? m_Dropdown : null;
+
+
+
+	// Methods
+
+	public string GetSelected() => Dropdown.options[Dropdown.value].text;
+
+
+
+	// Lifecycle
+
+	void Start() {
+		Dropdown.ClearOptions();
+		Dropdown.AddOptions(Microphone.devices.ToList());
+		Dropdown.value = 0;
+		Dropdown.RefreshShownValue();
+	}
 }

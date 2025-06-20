@@ -2,13 +2,12 @@ using UnityEngine;
 using System.Collections.Generic;
 
 #if UNITY_EDITOR
-	using UnityEditor;
-	using UnityEditor.Compilation;
+using UnityEditor;
 #endif
 
 
 
-// ━
+// Game States
 
 public enum GameState : byte {
 	None,
@@ -29,24 +28,21 @@ public class GameManager : MonoSingleton<GameManager> {
 	// Editor
 
 	#if UNITY_EDITOR
-		[CustomEditor(typeof(GameManager))]
-		class GameManagerEditor : EditorExtensions {
-			GameManager I => target as GameManager;
-			public override void OnInspectorGUI() {
-				Begin("Game Manager");
+	[CustomEditor(typeof(GameManager))]
+	class GameManagerEditor : EditorExtensions {
+		GameManager I => target as GameManager;
+		public override void OnInspectorGUI() {
+			Begin("Game Manager");
 
-				LabelField("Setup", EditorStyles.boldLabel);
-				StartDirectly = Toggle("Start Directly", StartDirectly);
-				Space();
-				LabelField("Debug", EditorStyles.boldLabel);
-				BeginDisabledGroup();
-				TextField("Game State", GameState.ToString());
-				EndDisabledGroup();
-				Space();
+			LabelField("Debug", EditorStyles.boldLabel);
+			BeginDisabledGroup();
+			TextField("Game State", GameState.ToString());
+			EndDisabledGroup();
+			Space();
 
-				End();
-			}
+			End();
 		}
+	}
 	#endif
 
 
@@ -61,33 +57,19 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	// Fields
 
-	[SerializeField] bool m_StartDirectly;
-
 	GameState m_GameState;
 
-	readonly List<EventGraphSO> m_ActiveGraphs = new();
-	readonly List<BaseEvent   > m_ActiveEvents = new();
-	readonly List<float       > m_EventElapsed = new();
+	readonly List<BaseEvent> m_Temp = new();
+	readonly List<BaseEvent> m_ActiveEvents = new();
+	readonly List<float> m_EventElapsed = new();
+
+	Player m_Player;
 
 	[SerializeField] int m_Gem;
 
 
 
 	// Properties
-
-	static bool StartDirectly {
-		get => Instance.m_StartDirectly;
-		set {
-			if (Instance.m_StartDirectly != value) {
-				Instance.m_StartDirectly = value;
-				#if UNITY_EDITOR
-					if (value && !EditorApplication.isPlayingOrWillChangePlaymode) {
-						CompilationPipeline.RequestScriptCompilation();
-					}
-				#endif
-			}
-		}
-	}
 
 	public static GameState GameState {
 		get => Instance.m_GameState;
@@ -104,11 +86,13 @@ public class GameManager : MonoSingleton<GameManager> {
 		}
 	}
 
-	static List<EventGraphSO> ActiveGraphs => Instance.m_ActiveGraphs;
-	static List<BaseEvent   > ActiveEvents => Instance.m_ActiveEvents;
-	static List<float       > EventElapsed => Instance.m_EventElapsed;
+	static List<BaseEvent> Temp => Instance.m_Temp;
+	static List<BaseEvent> ActiveEvents => Instance.m_ActiveEvents;
+	static List<float> EventElapsed => Instance.m_EventElapsed;
 
 
+
+	public static Player Player => Instance.m_Player ??= FindAnyObjectByType<Player>();
 
 	public static int Gem {
 		get => Instance.m_Gem;
@@ -120,19 +104,16 @@ public class GameManager : MonoSingleton<GameManager> {
 	// Methods
 
 	public static void PlayEvent(EventGraphSO graph) {
-		graph.OnEventBegin.Invoke();
-		ActiveGraphs.Add(graph);
 		ActiveEvents.Add(graph.Entry);
 		EventElapsed.Add(-1f);
 	}
 
 	static void SimulateEvents() {
+		if (GameState == GameState.Paused) return;
 		int i = 0;
 		while (i < ActiveEvents.Count) {
 			while (true) {
 				if (ActiveEvents[i] == null) {
-					ActiveGraphs[i].OnEventEnd.Invoke();
-					ActiveGraphs.RemoveAt(i);
 					ActiveEvents.RemoveAt(i);
 					EventElapsed.RemoveAt(i);
 					break;
@@ -140,10 +121,6 @@ public class GameManager : MonoSingleton<GameManager> {
 				if (EventElapsed[i] < 0f) {
 					EventElapsed[i] = 0f;
 					ActiveEvents[i].Start();
-					if (ActiveEvents[i].async) {
-						ActiveEvents.Add(ActiveEvents[i]);
-						EventElapsed.Add(EventElapsed[i]);
-					}
 				}
 				if (ActiveEvents[i].Update() == false) {
 					EventElapsed[i] += Time.deltaTime;
@@ -151,8 +128,16 @@ public class GameManager : MonoSingleton<GameManager> {
 					break;
 				} else {
 					ActiveEvents[i].End();
-					ActiveEvents[i] = ActiveEvents[i].GetNext();
-					EventElapsed[i] = -1f;
+					ActiveEvents[i].GetNext(Temp);
+					if (Temp.Count == 0) ActiveEvents[i] = null;
+					else {
+						ActiveEvents[i] = Temp[0];
+						EventElapsed[i] = -1f;
+						for (int j = 1; j < Temp.Count; j++) {
+							ActiveEvents.Add(Temp[j]);
+							EventElapsed.Add(-1f);
+						}
+					}
 				}
 			}
 		}
@@ -169,26 +154,10 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	// Lifecycle
 
-	void Start()
-	{
-		var startDirectly = false;
-		//#if UNITY_EDITOR
-		startDirectly = StartDirectly;
-		//#endif
-		if (startDirectly)
-		{
-			GameState = GameState.Gameplay;
-			UIManager.Initialize();
-			UIManager.ShowGame();
-		}
-		else
-		{
-			GameState = GameState.Paused;
-			UIManager.Initialize();
-			//UIManager.ShowTitle();
-		}
-		
-		ServerRequestManager.Instance.RequestTextAnalysis("오늘 너무 힘들었어...");
+	void Start() {
+		GameState = GameState.Gameplay;
+		UIManager.Initialize();
+		UIManager.ShowGame();
 	}
 
 	void Update() {

@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using TMPro;
 
 #if UNITY_EDITOR
-	using UnityEditor;
+using UnityEditor;
 #endif
 
 
@@ -20,43 +20,48 @@ public class GameCanvas : BaseCanvas {
 	// Editor
 
 	#if UNITY_EDITOR
-		[CustomEditor(typeof(GameCanvas))]
-		class GameCanvasEditor : EditorExtensions {
-			GameCanvas I => target as GameCanvas;
-			static bool foldout = false;
-			public override void OnInspectorGUI() {
-				Begin("Game Canvas");
+	[CustomEditor(typeof(GameCanvas))]
+	class GameCanvasEditor : EditorExtensions {
+		GameCanvas I => target as GameCanvas;
+		static bool foldout = false;
+		public override void OnInspectorGUI() {
+			Begin("Game Canvas");
 
-				if (foldout = Foldout("Sprite", foldout)) {
-					PropertyField("NumPSprite");
-					PropertyField("NumMSprite");
-					PropertyField("Num0Sprite");
-					PropertyField("Num1Sprite");
-					PropertyField("Num2Sprite");
-					PropertyField("Num3Sprite");
-					PropertyField("Num4Sprite");
-					PropertyField("Num5Sprite");
-					PropertyField("Num6Sprite");
-					PropertyField("Num7Sprite");
-					PropertyField("Num8Sprite");
-					PropertyField("Num9Sprite");
-				}
-				Space();
-				LabelField("Gem Collect Message", EditorStyles.boldLabel);
-				I.MessageTransform      = ObjectField("Message Transform",       I.MessageTransform);
-				I.MessageIconImage      = ObjectField("Message Icon Image",      I.MessageIconImage);
-				I.MessageValueTransform = ObjectField("Message Value Transform", I.MessageValueTransform);
-				I.MessageTextUGUI       = ObjectField("Message Text UGUI",       I.MessageTextUGUI);
-				if (I.MessageTextUGUI) {
-					I.MessageText = TextField("Message Text", I.MessageText);
-					LabelField(" ", "{N} = Gem Amount");
-				}
-				I.MessageLifetime = FloatField("Message Lifetime", I.MessageLifetime);
-				Space();
-
-				End();
+			if (foldout = Foldout("Sprite", foldout)) {
+				PropertyField("NumPSprite");
+				PropertyField("NumMSprite");
+				PropertyField("Num0Sprite");
+				PropertyField("Num1Sprite");
+				PropertyField("Num2Sprite");
+				PropertyField("Num3Sprite");
+				PropertyField("Num4Sprite");
+				PropertyField("Num5Sprite");
+				PropertyField("Num6Sprite");
+				PropertyField("Num7Sprite");
+				PropertyField("Num8Sprite");
+				PropertyField("Num9Sprite");
 			}
+			Space();
+			LabelField("Interactable Text", EditorStyles.boldLabel);
+			I.InteractableTransform = ObjectField("Interactable Transform", I.InteractableTransform);
+			I.InteractableNameUGUI  = ObjectField("Interactable Name UGUI", I.InteractableNameUGUI);
+			I.InteractableTypeUGUI  = ObjectField("Interactable Type UGUI", I.InteractableTypeUGUI);
+			Space();
+			LabelField("Gem Collect Message", EditorStyles.boldLabel);
+			I.MessageTransform      = ObjectField("Message Transform",       I.MessageTransform);
+			I.MessageIconImage      = ObjectField("Message Icon Image",      I.MessageIconImage);
+			I.MessageValueTransform = ObjectField("Message Value Transform", I.MessageValueTransform);
+			I.MessageTextUGUI       = ObjectField("Message Text UGUI",       I.MessageTextUGUI);
+			if (I.MessageTextUGUI) {
+				I.MessageText = TextField("Message Text", I.MessageText);
+				LabelField(" ", "{N} = Gem Amount");
+			}
+			I.MessageLifetime = FloatField("Message Lifetime", I.MessageLifetime);
+			Space();
+
+			End();
 		}
+	}
 	#endif
 
 
@@ -80,17 +85,36 @@ public class GameCanvas : BaseCanvas {
 
 	// Fields
 
-	[SerializeField] RectTransform   m_MessageTransform;
-	[SerializeField] Image           m_MessageIconImage;
-	[SerializeField] RectTransform   m_MessageValueTransform;
+	[SerializeField] RectTransform m_InteractableTransform;
+	[SerializeField] TextMeshProUGUI m_InteractableNameUGUI;
+	[SerializeField] TextMeshProUGUI m_InteractableTypeUGUI;
+
+	[SerializeField] RectTransform m_MessageTransform;
+	[SerializeField] Image m_MessageIconImage;
+	[SerializeField] RectTransform m_MessageValueTransform;
 	[SerializeField] TextMeshProUGUI m_MessageTextUGUI;
-	[SerializeField] string          m_MessageText;
-	[SerializeField] float           m_MessageLifetime = 5f;
+	[SerializeField] string m_MessageText;
+	[SerializeField] float m_MessageLifetime = 5f;
 	float m_MessageTimer;
 
 
 
 	// Properties
+
+	RectTransform InteractableTransform {
+		get => m_InteractableTransform;
+		set => m_InteractableTransform = value;
+	}
+	TextMeshProUGUI InteractableNameUGUI {
+		get => m_InteractableNameUGUI;
+		set => m_InteractableNameUGUI = value;
+	}
+	TextMeshProUGUI InteractableTypeUGUI {
+		get => m_InteractableTypeUGUI;
+		set => m_InteractableTypeUGUI = value;
+	}
+
+
 
 	RectTransform MessageTransform {
 		get => m_MessageTransform;
@@ -199,10 +223,39 @@ public class GameCanvas : BaseCanvas {
 	// Lifecycle
 
 	void Start() {
+		InteractableTransform.gameObject.SetActive(false);
 		MessageTransform.gameObject.SetActive(false);
 	}
 
-	void Update() {
+	void LateUpdate() {
+		var (gameObject, interactable) = GameManager.Player.GetNearestInteractable();
+		bool match = true;
+		match &= interactable != null && interactable.IsInteractable;
+		match &= GameManager.GameState == GameState.Gameplay;
+		if (match) {
+			InteractableTransform.gameObject.SetActive(true);
+			var aWorldPos = GameManager.Player.transform.position;
+			var bWorldPos = gameObject.transform.position;
+			var aScreenPos = CameraManager.MainCamera.WorldToScreenPoint(aWorldPos);
+			var bScreenPos = CameraManager.MainCamera.WorldToScreenPoint(bWorldPos);
+			var namePos = bScreenPos + new Vector3(0f, 150f, 0f);
+			InteractableNameUGUI.rectTransform.position = namePos;
+			InteractableNameUGUI.text = gameObject.name switch {
+				"Yejin"  => "예진",
+				"Minsu"  => "민수",
+				"People" => "사람들",
+				_ => gameObject.name,
+			};
+			var typePos = Vector3.Lerp(aScreenPos, bScreenPos, 0.5f) + new Vector3(0f, -50f, 0f);
+			InteractableTypeUGUI.rectTransform.position = typePos;
+			InteractableTypeUGUI.text = interactable.InteractionType switch {
+				InteractionType.Talk => "말하기",
+				_ => "상호작용",
+			};
+		} else {
+			InteractableTransform.gameObject.SetActive(false);
+		}
+
 		if (0f < MessageTimer) {
 			MessageTimer = Mathf.Max(0f, MessageTimer - Time.deltaTime);
 			if (MessageTimer == 0f) MessageTransform.gameObject.SetActive(false);
