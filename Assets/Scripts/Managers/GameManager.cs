@@ -64,7 +64,7 @@ public class GameManager : MonoSingleton<GameManager> {
 	readonly List<float> m_EventElapsed = new();
 
 	Player m_Player;
-
+	[SerializeField] HashMap<string, int> m_Inventory = new();
 	[SerializeField] int m_Gem;
 	public bool m_Negative = false;
 
@@ -72,19 +72,15 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	// Properties
 
-	public static GameState GameState
-	{
+	public static GameState GameState {
 		get => Instance.m_GameState;
-		set
-		{
-			if (Instance.m_GameState != value)
-			{
+		set {
+			if (Instance.m_GameState != value) {
 				Instance.m_GameState = value;
-				InputManager.SwitchActionMap(value switch
-				{
+				InputManager.SwitchActionMap(value switch {
 					GameState.Gameplay => ActionMap.Player,
 					GameState.Cutscene => ActionMap.UI,
-					GameState.Paused => ActionMap.UI,
+					GameState.Paused   => ActionMap.UI,
 					_ => default,
 				});
 			}
@@ -98,6 +94,11 @@ public class GameManager : MonoSingleton<GameManager> {
 
 
 	public static Player Player => Instance.m_Player ??= FindAnyObjectByType<Player>();
+
+	public static HashMap<string, int> Inventory {
+		get => Instance.m_Inventory;
+		set => Instance.m_Inventory = value;
+	}
 
 	public static int Gem {
 		get => Instance.m_Gem;
@@ -162,7 +163,7 @@ public class GameManager : MonoSingleton<GameManager> {
 	void Start() {
 		GameState = GameState.Gameplay;
 		UIManager.Initialize();
-		UIManager.ShowGame();
+		UIManager.OpenGame();
 	}
 
 	void Update() {

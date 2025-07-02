@@ -25,6 +25,12 @@ public class UIManager : MonoSingleton<UIManager> {
 		public override void OnInspectorGUI() {
 			Begin("UI Manager");
 
+			LabelField("Debug", EditorStyles.boldLabel);
+			BeginDisabledGroup();
+			TextField("Current Canvas", $"{(Application.isPlaying ? CurrentCanvas : "None")}");
+			EndDisabledGroup();
+			Space();
+
 			End();
 		}
 	}
@@ -94,20 +100,22 @@ public class UIManager : MonoSingleton<UIManager> {
 	public static void PopOverlay() {
 		if (OverlayCanvas.TryPop(out var next)) next.Hide();
 		if (OverlayCanvas.TryPeek(out var prev)) prev.Show();
+		OnCanvasChanged();
 	}
 
 
 
 	// Canvas Methods
 
-	public static void ShowGame() => ShowMainCanvas(GameCanvas);
+	public static void OpenGame() => OpenMainCanvas(GameCanvas);
 
-	static void ShowMainCanvas(BaseCanvas mainCanvas) {
+	static void OpenMainCanvas(BaseCanvas mainCanvas) {
 		if (mainCanvas == CurrentCanvas) return;
 		if (MainCanvas) MainCanvas.Hide();
 		while (OverlayCanvas.TryPop(out var canvas)) canvas.Hide();
 		MainCanvas = mainCanvas;
 		mainCanvas.Show();
+		OnCanvasChanged();
 	}
 
 	public static void OpenDialogue()  => OpenOverlayCanvas(DialogueCanvas);
@@ -118,6 +126,19 @@ public class UIManager : MonoSingleton<UIManager> {
 		if (OverlayCanvas.TryPeek(out var canvas)) canvas.Hide(true);
 		OverlayCanvas.Push(overlayCanvas);
 		overlayCanvas.Show();
+		OnCanvasChanged();
+	}
+
+	static void OnCanvasChanged() {
+		if (IsUIActive) {
+			if (GameManager.GameState == GameState.Gameplay) {
+				GameManager.GameState = GameState.Paused;
+			}
+		} else {
+			if (GameManager.GameState == GameState.Paused) {
+				GameManager.GameState = GameState.Gameplay;
+			}
+		}
 	}
 
 
