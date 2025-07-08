@@ -51,6 +51,7 @@ public class InputManager : MonoSingleton<InputManager> {
 		InputManager I => target as InputManager;
 		public override void OnInspectorGUI() {
 			Begin("Input Manager");
+			I.TrySetInstance();
 
 			LabelField("Web Cam", EditorStyles.boldLabel);
 			CaptureWebCam = Toggle("Capture Web Cam", CaptureWebCam);

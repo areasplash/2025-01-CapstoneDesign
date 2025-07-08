@@ -33,6 +33,7 @@ public class GameManager : MonoSingleton<GameManager> {
 		GameManager I => target as GameManager;
 		public override void OnInspectorGUI() {
 			Begin("Game Manager");
+			I.TrySetInstance();
 
 			LabelField("Debug", EditorStyles.boldLabel);
 			BeginDisabledGroup();

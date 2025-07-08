@@ -24,6 +24,7 @@ public class UIManager : MonoSingleton<UIManager> {
 		UIManager I => target as UIManager;
 		public override void OnInspectorGUI() {
 			Begin("UI Manager");
+			I.TrySetInstance();
 
 			LabelField("Debug", EditorStyles.boldLabel);
 			BeginDisabledGroup();
