@@ -19,38 +19,32 @@ public class Plant : MonoBehaviour
     private float updateTimer;
 
 
-    private void Awake()
-    {
+    private void Awake() {
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    private void init()
-    {
+    private void init() {
         // 식물 상태 초기화
         spriteRenderer.sprite = PlantData.GrowthSprites[0];
         elapsedGrowthTime = 0f;
         updateTimer = 0f;
     }
 
-    public void SetPlantData(PlantData data)
-    {
+    public void SetPlantData(PlantData data) {
         PlantData = data;
         init();
     }
 
-    public void SetFarmPlot(FarmPlot plot)
-    {
+    public void SetFarmPlot(FarmPlot plot) {
         ParentPlot = plot;
     }
 
-    public void ApplyElapsedTime(float passedTime)
-    {
-        elapsedGrowthTime = Mathf.Min(PlantData.GrowthTime, elapsedGrowthTime + passedTime);
+    public void ApplyElapsedTime(float passedTime) {
+        elapsedGrowthTime = Mathf.Min(PlantData.GrowthTime, elapsedGrowthTime + passedTime * ParentPlot.GetGrowthSpeedMultiplier());
         UpdateGrowthLevel();
     }
 
-    private void UpdateGrowthLevel()
-    {
+    private void UpdateGrowthLevel() {
         // 추후 PlantData에서 각 단계 시간을 지정할 수도 있음
         float growthPerLevel = PlantData.GrowthTime / PlantData.GrowthSprites.Length;
         growthLevel = Mathf.Min((int)(elapsedGrowthTime / growthPerLevel), PlantData.GrowthSprites.Length - 1);
@@ -58,23 +52,19 @@ public class Plant : MonoBehaviour
         spriteRenderer.sprite = PlantData.GrowthSprites[growthLevel];
     }
 
-    public bool IsHarvestable()
-    {
+    public bool IsHarvestable() {
         return growthLevel == PlantData.GrowthSprites.Length - 1;
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
+    void Start() {
 
     }
 
     // Update is called once per frame
-    void Update()
-    {
+    void Update() {
         updateTimer += Time.deltaTime;
-        if (updateTimer >= updateInterval)
-        {
+        if (updateTimer >= updateInterval) {
             ApplyElapsedTime(updateTimer);
             updateTimer = 0f;
         }

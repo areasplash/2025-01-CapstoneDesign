@@ -30,7 +30,6 @@ public class MapObjectsParent : MonoBehaviour
     void Start()
     {
         SnapAllChildrenToGrid();
-        Debug.Log("Start");
     }
 
     // Update is called once per frame

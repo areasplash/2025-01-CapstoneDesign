@@ -69,7 +69,7 @@ public class Player : Actor {
 				if (transform.TryGetComponent(out i)) break;
 				foreach (Transform child in transform) stack.Push(child);
 			}
-			if (i != null) {
+			if (i != null && i.IsInteractable) {
 				float sq = GetDistanceSq(nearObject);
 				if (sq < distancesq) {
 					distancesq = sq;
@@ -86,7 +86,13 @@ public class Player : Actor {
 	protected override void Simulate() {
 		MoveVector = InputManager.MoveDirection;
 		if (InputManager.GetKeyDown(KeyAction.Interact)) {
-			GetNearestInteractable().Item2?.Interact(gameObject);
+			var interactable = GetNearestInteractable().Item2;
+			if (interactable != null) {
+				GetNearestInteractable().Item2?.Interact(gameObject);
+			}
+			else {
+				GameManager.Player.GetComponent<ToolManager>()?.UseTool();
+			}
 		}
 	}
 
