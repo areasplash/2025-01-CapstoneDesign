@@ -56,20 +56,20 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 			LabelField("Audio Clip", EditorStyles.boldLabel);
 			SourcePath = TextField("Source Path", SourcePath);
 			BeginHorizontal();
-			PrefixLabel("Read Audio Clips");
+			PrefixLabel("Load Audio Clips");
 			if (Button("Clear")) ClearAudioClips();
-			if (Button("Read"))  ReadAudioClips();
+			if (Button("Load")) LoadAudioClips();
 			EndHorizontal();
 			Space();
 
 			LabelField("Audio Clip Data", EditorStyles.boldLabel);
-			LabelField("Count", Data.Count.ToString());
+			LabelField("Count", $"{List.Count} / {AudioLength}");
 			BeginDisabledGroup();
 			int i = 0;
-			int max = Mathf.Min(8, Data.Count);
-			foreach (var element in Data) {
+			int max = Mathf.Min(8, List.Count);
+			foreach (var audio in List) {
 				if (max < ++i) break;
-				ObjectField(element.Key.ToString(), element.Value.AudioClip);
+				ObjectField(audio.ToString(), Data[(int)audio].AudioClip);
 			}
 			if (max < i) LabelField("...");
 			EndDisabledGroup();
@@ -92,7 +92,7 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 
 
 
-	readonly static int AudioCount = Enum.GetValues(typeof(Audio)).Length;
+	static readonly int AudioLength = Enum.GetValues(typeof(Audio)).Length;
 
 	enum State : byte {
 		Unloaded,
@@ -101,7 +101,7 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	}
 
 	[Serializable]
-	class DataSet {
+	struct DataSet {
 		public AudioClip AudioClip;
 		public State State;
 		public float LastPlayed;
@@ -127,7 +127,8 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	List<uint> m_IDs = new();
 
 	[SerializeField] string m_SourcePath = "Assets/Audio";
-	[SerializeField] HashMap<Audio, DataSet> m_Data = new();
+	[SerializeField] List<Audio> m_SourceList = new();
+	[SerializeField] DataSet[] m_SourceData = new DataSet[AudioLength];
 	int m_Index;
 
 
@@ -183,7 +184,8 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		get => Instance.m_SourcePath;
 		set => Instance.m_SourcePath = value;
 	}
-	static HashMap<Audio, DataSet> Data => Instance.m_Data;
+	static List<Audio> List => Instance.m_SourceList;
+	static DataSet[] Data => Instance.m_SourceData;
 
 	static int Index {
 		get => Instance.m_Index;
@@ -195,7 +197,29 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	// Data Methods
 
 	#if UNITY_EDITOR
-	static T[] LoadAssets<T>(string path) where T : UnityEngine.Object {
+	static void ClearAudioClips() {
+		List.Clear();
+		Data.Initialize();
+	}
+
+	static void LoadAudioClips() {
+		ClearAudioClips();
+		foreach (var clip in LoadAssets<AudioClip>(SourcePath)) {
+			if (!Enum.TryParse(clip.name, out Audio audio)) continue;
+			List.Add(audio);
+			Data[(int)audio] = new DataSet {
+				AudioClip = clip,
+				State = clip.preloadAudioData ? State.Preloaded : State.Unloaded,
+			};
+		}
+		List.TrimExcess();
+
+		var message = string.Empty;
+		for (int i = 0; i < AudioLength; i++) if (!Data[i].AudioClip) message += $"{(Audio)i}, ";
+		if (!string.IsNullOrEmpty(message)) Debug.Log($"Missing audio clips: {message}");
+	}
+
+	public static T[] LoadAssets<T>(string path) where T : UnityEngine.Object {
 		var guids = AssetDatabase.FindAssets("t:" + typeof(T).Name, new[] { path });
 		var assets = new T[guids.Length];
 		for (int i = 0; i < guids.Length; i++) {
@@ -203,22 +227,6 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 			assets[i] = AssetDatabase.LoadAssetAtPath<T>(assetPath);
 		}
 		return assets;
-	}
-
-	static void ClearAudioClips() {
-		Data.Clear();
-	}
-
-	static void ReadAudioClips() {
-		Data.Clear();
-		foreach (var clip in LoadAssets<AudioClip>(SourcePath)) {
-			if (!Enum.TryParse(clip.name, out Audio audio)) continue;
-			Data.Add(audio, new DataSet {
-				AudioClip = clip,
-				State = clip.preloadAudioData ? State.Preloaded : State.Unloaded,
-			});
-		}
-		Data.TrimExcess();
 	}
 	#endif
 
@@ -230,7 +238,8 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		if (!Pooled.TryPop(out var instance)) {
 			instance = Instantiate(AudioTemplate, Instance.transform);
 		}
-		if (Data.TryGetValue(audio, out DataSet data)) {
+		ref var data = ref Data[(int)audio];
+		if (data.AudioClip) {
 			instance.clip = data.AudioClip;
 			if (data.State == State.Unloaded) {
 				data.State = State.Loaded;
@@ -251,54 +260,84 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 			instance.outputAudioMixerGroup = AudioTemplate.outputAudioMixerGroup;
 			instance.loop = AudioTemplate.loop;
 			instance.volume = AudioTemplate.volume;
+			instance.spatialBlend = AudioTemplate.spatialBlend;
+			instance.spread = AudioTemplate.spread;
+			instance.minDistance = AudioTemplate.minDistance;
+			instance.maxDistance = AudioTemplate.maxDistance;
 			Pooled.Push(instance);
 		}
 		Audios.Remove(id);
 	}
 
-	static void ManageAudioOnMemory() {
+	static void UpdateInstances() {
 		foreach (var (id, (instance, audio)) in Audios) {
-			var data = Data[audio];
+			ref var data = ref Data[(int)audio];
 			if (instance.isPlaying) data.LastPlayed = Time.time;
 			else if (data.AudioClip.loadState != AudioDataLoadState.Loading) IDs.Add(id);
 		}
 		foreach (var id in IDs) ReleaseInstance(id);
 		IDs.Clear();
 
-		int maxIndex = Mathf.Min(Index + TimeSliceCount, AudioCount);
-		for (; Index < maxIndex; Index++) if (Data.TryGetValue((Audio)Index, out DataSet data)) {
+		int maxIndex = Mathf.Min(Index + TimeSliceCount, List.Count);
+		for (; Index < maxIndex; Index++) {
+			ref var data = ref Data[(int)List[Index]];
 			if (data.State == State.Loaded && Lifetime <= Time.time - data.LastPlayed) {
 				data.State = State.Unloaded;
 				data.AudioClip.UnloadAudioData();
 			}
 		}
-		if (Index == AudioCount) Index = 0;
+		if (Index == List.Count) Index = 0;
 	}
 
 
 
 	// Audio Methods
 
-	public static uint PlayMusic(Audio audio, bool loop = true) {
+	public static uint PlayMusic(Audio audio, float volume = 1f) {
 		var (id, instance) = GetOrCreateInstance(audio);
 		instance.outputAudioMixerGroup = MusicGroup;
-		instance.loop = loop;
+		instance.loop = true;
+		instance.volume = volume;
 		instance.Play();
 		return id;
 	}
 
-	public static uint PlaySoundFX(Audio audio, Vector3 position = default) {
+	public static uint PlaySoundFX(Audio audio, float volume = 1f) {
+		var (id, instance) = GetOrCreateInstance(audio);
+		instance.outputAudioMixerGroup = SoundFXGroup;
+		instance.volume = volume;
+		instance.Play();
+		return id;
+	}
+
+	public static uint PlayPointSoundFX(Audio audio, Vector3 position, float volume = 1f,
+		float spread = 0f, float minDistance = default, float maxDistance = default) {
 		var (id, instance) = GetOrCreateInstance(audio);
 		instance.transform.position = position;
 		instance.outputAudioMixerGroup = SoundFXGroup;
+		instance.volume = volume;
+		instance.spatialBlend = 1f;
+		instance.spread = spread;
+		if (minDistance != default) instance.minDistance = minDistance;
+		if (maxDistance != default) instance.maxDistance = maxDistance;
+		instance.Play();
+		return id;
+	}
+
+	public static uint PlayBlendSoundFX(Audio audio, Vector3 position, float volume = 1f,
+		float spatialBlend = 0.5f) {
+		var (id, instance) = GetOrCreateInstance(audio);
+		instance.transform.position = position;
+		instance.outputAudioMixerGroup = SoundFXGroup;
+		instance.volume = volume;
+		instance.spatialBlend = spatialBlend;
 		instance.Play();
 		return id;
 	}
 
 	public static void StopAudio(uint id) {
 		if (Audios.TryGetValue(id, out var value)) {
-			var instance = value.Item1;
-			instance.Stop();
+			value.Item1.Stop();
 			ReleaseInstance(id);
 		}
 	}
@@ -317,6 +356,6 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	}
 
 	void Update() {
-		ManageAudioOnMemory();
+		UpdateInstances();
 	}
 }
