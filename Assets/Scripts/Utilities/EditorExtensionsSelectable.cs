@@ -116,19 +116,6 @@ public class EditorExtensionsSelectable : SelectableEditor {
 		return EditorGUILayout.IntSlider(label, value, min, max);
 	}
 
-	public float FloatField(float value) {
-		return EditorGUILayout.FloatField(value);
-	}
-	public float FloatField(string label, float value) {
-		return EditorGUILayout.FloatField(label, value);
-	}
-	public float Slider(float value, float min, float max) {
-		return EditorGUILayout.Slider(value, min, max);
-	}
-	public float Slider(string label, float value, float min, float max) {
-		return EditorGUILayout.Slider(label, value, min, max);
-	}
-
 	public bool Toggle(bool value) {
 		return EditorGUILayout.Toggle(value);
 	}
@@ -182,6 +169,18 @@ public class EditorExtensionsSelectable : SelectableEditor {
 	public T EnumField<T>(string label, T value) where T : Enum {
 		return (T)EditorGUILayout.EnumPopup(label, value);
 	}
+	public T TextEnumField<T>(T value) where T : Enum {
+		return TextEnumField(string.Empty, value);
+	}
+	public T TextEnumField<T>(string label, T value) where T : Enum {
+		EditorGUILayout.BeginHorizontal();
+		PrefixLabel(label);
+		var name = EditorGUILayout.TextField(value.ToString());
+		if (Enum.TryParse(typeof(T), name, false, out var t)) value = (T)t;
+		value = (T)EditorGUILayout.EnumPopup(value);
+		EditorGUILayout.EndHorizontal();
+		return value;
+	}
 	public uint FlagField<T>(uint value, uint mask = uint.MaxValue) where T : Enum {
 		return FlagField<T>(string.Empty, value, mask);
 	}
@@ -225,6 +224,19 @@ public class EditorExtensionsSelectable : SelectableEditor {
 		value = EditorGUILayout.Popup(value, options);
 		EditorGUILayout.EndHorizontal();
 		return value;
+	}
+
+	public float FloatField(float value) {
+		return EditorGUILayout.FloatField(value);
+	}
+	public float FloatField(string label, float value) {
+		return EditorGUILayout.FloatField(label, value);
+	}
+	public float Slider(float value, float min, float max) {
+		return EditorGUILayout.Slider(value, min, max);
+	}
+	public float Slider(string label, float value, float min, float max) {
+		return EditorGUILayout.Slider(label, value, min, max);
 	}
 
 	public Vector2 Vector2Field(Vector2 value) {
@@ -290,6 +302,12 @@ public class EditorExtensionsSelectable : SelectableEditor {
 		return EditorGUILayout.ColorField(value);
 	}
 	public Color ColorField(string label, Color value) {
+		return EditorGUILayout.ColorField(label, value);
+	}
+	public Vector4 Color32Field(Vector4 value) {
+		return EditorGUILayout.ColorField(value);
+	}
+	public Vector4 Color32Field(string label, Vector4 value) {
 		return EditorGUILayout.ColorField(label, value);
 	}
 

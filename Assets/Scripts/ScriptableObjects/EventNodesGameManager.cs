@@ -1,14 +1,7 @@
 using UnityEngine;
-using UnityEngine.UIElements;
-using System.Collections.Generic;
-using System.Linq;
-
-using Unity.Mathematics;
 
 #if UNITY_EDITOR
-using UnityEditor;
-using UnityEditor.UIElements;
-using UnityEditor.Experimental.GraphView;
+using static EditorVisualElement;
 #endif
 
 
@@ -18,24 +11,23 @@ using UnityEditor.Experimental.GraphView;
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("Game Manager/Set Game State")]
-public class SetGameStateEvent : BaseEvent {
+public class SetGameStateEvent : EventBase {
 
 	// Node
 
 	#if UNITY_EDITOR
-	public class SetGameStateEventNode : BaseEventNode {
+	public class SetGameStateEventNode : EventNodeBase {
 		SetGameStateEvent I => target as SetGameStateEvent;
 
 		public SetGameStateEventNode() : base() {
-			mainContainer.style.width = DefaultNodeWidth;
-			var cyan = new StyleColor(ColorExtensions.HSVtoRGB(180f, 0.75f, 0.60f));
+			mainContainer.style.width = Node1U;
+			var cyan = new Color(180f, 0.75f, 0.60f).ToRGB();
 			titleContainer.style.backgroundColor = cyan;
 		}
 
 		public override void ConstructData() {
-			var state = new EnumField(GameState.Gameplay) { value = I.state };
-			state.RegisterValueChangedCallback(evt => I.state = (GameState)evt.newValue);
-			mainContainer.Add(state);
+			var gameState = EnumField(I.gameState, value => I.gameState = value);
+			mainContainer.Add(gameState);
 		}
 	}
 	#endif
@@ -44,20 +36,22 @@ public class SetGameStateEvent : BaseEvent {
 
 	// Fields
 
-	public GameState state = GameState.Gameplay;
+	public GameState gameState = GameState.Gameplay;
 
 
 
 	// Methods
 
-	public override void CopyFrom(BaseEvent data) {
-		base.CopyFrom(data);
-		if (data is SetGameStateEvent setGameState) {
-			state = setGameState.state;
+	public override void CopyFrom(EventBase eventBase) {
+		base.CopyFrom(eventBase);
+		if (eventBase is SetGameStateEvent setGameStateEvent) {
+			gameState = setGameStateEvent.gameState;
 		}
 	}
 
-	public override void End() => GameManager.GameState = state;
+	public override void End() {
+		GameManager.GameState = gameState;
+	}
 }
 
 
@@ -67,21 +61,20 @@ public class SetGameStateEvent : BaseEvent {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("Game Manager/Collect Gem")]
-public class CollectGemEvent : BaseEvent {
+public class CollectGemEvent : EventBase {
 
 	// Node
 
 	#if UNITY_EDITOR
-		public class CollectGemEventNode : BaseEventNode {
+		public class CollectGemEventNode : EventNodeBase {
 			CollectGemEvent I => target as CollectGemEvent;
 
 			public CollectGemEventNode() : base() {
-				mainContainer.style.minWidth = mainContainer.style.maxWidth = DefaultNodeWidth;
+				mainContainer.style.width = Node1U;
 			}
 
 			public override void ConstructData() {
-				var amount = new IntegerField() { value = I.amount };
-				amount.RegisterValueChangedCallback(evt => I.amount = evt.newValue);
+				var amount = IntField(I.amount, value => I.amount = value);
 				mainContainer.Add(amount);
 			}
 		}
@@ -101,10 +94,10 @@ public class CollectGemEvent : BaseEvent {
 		GameManager.CollectGem(amount);
 	}
 
-	public override void CopyFrom(BaseEvent data) {
-		base.CopyFrom(data);
-		if (data is CollectGemEvent collectGem) {
-			amount = collectGem.amount;
+	public override void CopyFrom(EventBase eventBase) {
+		base.CopyFrom(eventBase);
+		if (eventBase is CollectGemEvent collectGemEvent) {
+			amount = collectGemEvent.amount;
 		}
 	}
 }

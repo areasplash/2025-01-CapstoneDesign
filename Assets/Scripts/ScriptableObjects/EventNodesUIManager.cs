@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEditor.Experimental.GraphView;
+using static EditorVisualElement;
 #endif
 
 
@@ -17,12 +18,12 @@ using UnityEditor.Experimental.GraphView;
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("UI Manager/Dialogue")]
-public class DialogueEvent : BaseEvent {
+public class DialogueEvent : EventBase {
 
 	// Node
 
 	#if UNITY_EDITOR
-		public class DialogueEventNode : BaseEventNode {
+		public class DialogueEventNode : EventNodeBase {
 			DialogueEvent I => target as DialogueEvent;
 
 			public override void ConstructData() {
@@ -82,13 +83,11 @@ public class DialogueEvent : BaseEvent {
 
 	// Methods
 
-	public override void CopyFrom(BaseEvent data) {
-		base.CopyFrom(data);
-		if (data is DialogueEvent dialogue) {
-			names.Clear();
-			texts.Clear();
-			names.AddRange(dialogue.names);
-			texts.AddRange(dialogue.texts);
+	public override void CopyFrom(EventBase eventBase) {
+		base.CopyFrom(eventBase);
+		if (eventBase is DialogueEvent dialogueEvent) {
+			names.CopyFrom(dialogueEvent.names);
+			texts.CopyFrom(dialogueEvent.texts);
 		}
 	}
 
@@ -112,12 +111,12 @@ public class DialogueEvent : BaseEvent {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("UI Manager/Branch")]
-public class BranchEvent : BaseEvent {
+public class BranchEvent : EventBase {
 
 	// Node
 
 	#if UNITY_EDITOR
-		public class BranchEventNode : BaseEventNode {
+		public class BranchEventNode : EventNodeBase {
 			BranchEvent I => target as BranchEvent;
 
 			public override void ConstructData() {
@@ -182,21 +181,19 @@ public class BranchEvent : BaseEvent {
 
 	// Methods
 
-	public override void CopyFrom(BaseEvent data) {
-		base.CopyFrom(data);
-		if (data is BranchEvent branch) {
+	public override void CopyFrom(EventBase eventBase) {
+		base.CopyFrom(eventBase);
+		if (eventBase is BranchEvent branchEvent) {
 			texts.Clear();
-			texts.AddRange(branch.texts);
+			texts.AddRange(branchEvent.texts);
 		}
 	}
 
-	public override void GetNext(List<BaseEvent> list) {
-		list ??= new();
-		list.Clear();
+	public override void GetNext(List<EventBase> list) {
 		// Get Index from UI Manager, User Selection
 		int index = 0;
-		foreach (var next in next) if (next.oPortType == PortType.Default) {
-			if (next.oPort == index) list.Add(next.data);
+		foreach (var next in nexts) if (next.oPortType == PortType.Default) {
+			if (next.oPort == index) list.Add(next.eventBase);
 		}
 	}
 }
@@ -208,16 +205,16 @@ public class BranchEvent : BaseEvent {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("UI Manager/Dialogue Input")]
-public class DialogueInputEvent : BaseEvent {
+public class DialogueInputEvent : EventBase {
 
 	// Node
 
 	#if UNITY_EDITOR
-	public class DialogueInputEventNode : BaseEventNode {
+	public class DialogueInputEventNode : EventNodeBase {
 		DialogueInputEvent I => target as DialogueInputEvent;
 
 		public DialogueInputEventNode() : base() {
-			mainContainer.style.minWidth = mainContainer.style.maxWidth = DefaultNodeWidth;
+			mainContainer.style.width = Node1U;
 		}
 
 		public override void ConstructPort() {
@@ -252,7 +249,6 @@ public class DialogueInputEvent : BaseEvent {
 	}
 
 	public override void GetMultimodalData(List<MultimodalData> list) {
-		list ??= new();
 		list.Add(data);
 	}
 }

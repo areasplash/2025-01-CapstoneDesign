@@ -10,7 +10,6 @@ using UnityEditor;
 // Game States
 
 public enum GameState : byte {
-	None,
 	Gameplay,
 	Cutscene,
 	Paused,
@@ -65,8 +64,8 @@ public class GameManager : MonoSingleton<GameManager> {
 	public bool m_Negative = false;
 
 	Dictionary<uint, byte> m_Events = new();
-	List<(uint, BaseEvent, float)> m_EventList = new();
-	List<BaseEvent> m_EventBuffer = new();
+	List<(uint, EventBase, float)> m_EventList = new();
+	List<EventBase> m_EventBuffer = new();
 	uint m_EventID;
 
 
@@ -103,8 +102,8 @@ public class GameManager : MonoSingleton<GameManager> {
 
 
 	static Dictionary<uint, byte> Events => Instance.m_Events;
-	static List<(uint, BaseEvent, float)> EventList => Instance.m_EventList;
-	static List<BaseEvent> EventBuffer => Instance.m_EventBuffer;
+	static List<(uint, EventBase, float)> EventList => Instance.m_EventList;
+	static List<EventBase> EventBuffer => Instance.m_EventBuffer;
 
 	static uint EventID {
 		get => Instance.m_EventID;
@@ -124,7 +123,7 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	// Instance Methods
 
-	static uint AddInstance(BaseEvent baseEvent) {
+	static uint AddInstance(EventBase baseEvent) {
 		if (baseEvent == null) return default;
 		while (++EventID == default || Events.ContainsKey(EventID));
 		Events.Add(EventID, 1);
