@@ -84,11 +84,11 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 
 	// Constants
 
-	const string MusicKey = "Music";
-	const float MusicDefault = 1f;
+	const string MusicVolumeK = "MusicVolume";
+	const float MusicVolumeD = 1f;
 
-	const string SoundFXKey = "SoundFX";
-	const float SoundFXDefault = 1f;
+	const string SoundFXVolumeK = "SoundFXVolume";
+	const float SoundFXVolumeD = 1f;
 
 
 
@@ -117,8 +117,8 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	[SerializeField] AudioMixer m_AudioMixer;
 	[SerializeField] AudioMixerGroup m_MusicGroup;
 	[SerializeField] AudioMixerGroup m_SoundFXGroup;
-	float? m_Music;
-	float? m_SoundFX;
+	float? m_MusicVolume;
+	float? m_SoundFXVolume;
 
 	[SerializeField] AudioSource m_AudioTemplate;
 	Dictionary<uint, (AudioSource, Audio)> m_Audios = new();
@@ -149,18 +149,18 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		set => Instance.m_SoundFXGroup = value;
 	}
 
-	public static float Music {
-		get => Instance.m_Music ??= PlayerPrefs.GetFloat(MusicKey, MusicDefault);
+	public static float MusicVolume {
+		get => Instance.m_MusicVolume ??= PlayerPrefs.GetFloat(MusicVolumeK, MusicVolumeD);
 		set {
-			PlayerPrefs.SetFloat(MusicKey, (Instance.m_Music = value).Value);
-			AudioMixer?.SetFloat(MusicKey, Mathf.Log10(Mathf.Max(0.00001f, value)) * 20f);
+			PlayerPrefs.SetFloat(MusicVolumeK, (Instance.m_MusicVolume = value).Value);
+			AudioMixer?.SetFloat(MusicVolumeK, Mathf.Log10(Mathf.Max(0.00001f, value)) * 20f);
 		}
 	}
-	public static float SoundFX {
-		get => Instance.m_SoundFX ??= PlayerPrefs.GetFloat(SoundFXKey, SoundFXDefault);
+	public static float SoundFXVolume {
+		get => Instance.m_SoundFXVolume ??= PlayerPrefs.GetFloat(SoundFXVolumeK, SoundFXVolumeD);
 		set {
-			PlayerPrefs.SetFloat(SoundFXKey, (Instance.m_SoundFX = value).Value);
-			AudioMixer?.SetFloat(SoundFXKey, Mathf.Log10(Mathf.Max(0.00001f, value)) * 20f);
+			PlayerPrefs.SetFloat(SoundFXVolumeK, (Instance.m_SoundFXVolume = value).Value);
+			AudioMixer?.SetFloat(SoundFXVolumeK, Mathf.Log10(Mathf.Max(0.00001f, value)) * 20f);
 		}
 	}
 
@@ -191,7 +191,10 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		set => Instance.m_SourcePath = value;
 	}
 	static List<Audio> ClipList => Instance.m_ClipList;
-	static ClipEntry[] ClipData => Instance.m_ClipData;
+	static ClipEntry[] ClipData {
+		get => Instance.m_ClipData;
+		set => Instance.m_ClipData = value;
+	}
 
 	static int SliceIndex {
 		get => Instance.m_SliceIndex;
@@ -205,7 +208,7 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	#if UNITY_EDITOR
 	static void ClearAudioClips() {
 		ClipList.Clear();
-		ClipData.Initialize();
+		ClipData = new ClipEntry[AudioCount];
 	}
 
 	static void LoadAudioClips() {
@@ -221,8 +224,9 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		ClipList.TrimExcess();
 
 		var message = string.Empty;
-		for (int i = 0; i < AudioCount; i++) if (!ClipData[i].AudioClip) message += $"{(Audio)i}, ";
-		if (!string.IsNullOrEmpty(message)) Debug.Log($"Missing audio clips: {message}");
+		for (int i = 0; i < AudioCount; i++) if (!ClipData[i].AudioClip)
+			message += $"{(string.IsNullOrEmpty(message) ? string.Empty : ", ")}{(Audio)i}";
+		if (!string.IsNullOrEmpty(message)) Debug.Log($"Missing audio clips:\n{message}");
 	}
 
 	static T[] LoadAssets<T>(string path) where T : UnityEngine.Object {
@@ -258,29 +262,15 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		return (NextID, instance);
 	}
 
-	static void RemoveInstance(uint audioID) {
-		var instance = Audios[audioID].Item1;
-		if (instance) {
-			instance.gameObject.SetActive(false);
-			instance.transform.localPosition = default;
-			instance.outputAudioMixerGroup = AudioTemplate.outputAudioMixerGroup;
-			instance.loop = AudioTemplate.loop;
-			instance.volume = AudioTemplate.volume;
-			instance.spatialBlend = AudioTemplate.spatialBlend;
-			instance.spread = AudioTemplate.spread;
-			instance.minDistance = AudioTemplate.minDistance;
-			instance.maxDistance = AudioTemplate.maxDistance;
-			AudioPool.Push(instance);
-		}
-		Audios.Remove(audioID);
-	}
-
 	static void UpdateInstances() {
 		foreach (var (audioID, (instance, audio)) in Audios) {
 			if (instance) {
 				ref var data = ref ClipData[(int)audio];
 				if (instance.isPlaying) data.LastPlayTime = Time.time;
-				else if (data.AudioClip.loadState != AudioDataLoadState.Loading) IDBuffer.Add(audioID);
+				else {
+					var state = data.AudioClip.loadState;
+					if (state != AudioDataLoadState.Loading) IDBuffer.Add(audioID);
+				}
 			} else IDBuffer.Add(audioID);
 		}
 		if (0 < IDBuffer.Count) {
@@ -296,6 +286,47 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 			}
 		}
 		if (SliceIndex == ClipList.Count) SliceIndex = 0;
+	}
+
+	static void RemoveInstance(uint audioID) {
+		var instance = Audios[audioID].Item1;
+		if (instance) {
+			var transform_localPosition = AudioTemplate.transform.localPosition;
+			if (instance.transform.localPosition != transform_localPosition) {
+				instance.transform.localPosition = transform_localPosition;
+			}
+			var outputAudioMixerGroup = AudioTemplate.outputAudioMixerGroup;
+			if (instance.outputAudioMixerGroup != outputAudioMixerGroup) {
+				instance.outputAudioMixerGroup = outputAudioMixerGroup;
+			}
+			var loop = AudioTemplate.loop;
+			if (instance.loop != loop) {
+				instance.loop = loop;
+			}
+			var volume = AudioTemplate.volume;
+			if (instance.volume != volume) {
+				instance.volume = volume;
+			}
+			var spatialBlend = AudioTemplate.spatialBlend;
+			if (instance.spatialBlend != spatialBlend) {
+				instance.spatialBlend = spatialBlend;
+			}
+			var spread = AudioTemplate.spread;
+			if (instance.spread != spread) {
+				instance.spread = spread;
+			}
+			var minDistance = AudioTemplate.minDistance;
+			if (instance.minDistance != minDistance) {
+				instance.minDistance = minDistance;
+			}
+			var maxDistance = AudioTemplate.maxDistance;
+			if (instance.maxDistance != maxDistance) {
+				instance.maxDistance = maxDistance;
+			}
+			instance.gameObject.SetActive(false);
+			AudioPool.Push(instance);
+		}
+		Audios.Remove(audioID);
 	}
 
 
@@ -373,11 +404,11 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	// Lifecycle
 
 	void Start() {
-		_ = Music;
-		_ = SoundFX;
+		_ = MusicVolume;
+		_ = SoundFXVolume;
 	}
 
-	void Update() {
+	void LateUpdate() {
 		UpdateInstances();
 	}
 }

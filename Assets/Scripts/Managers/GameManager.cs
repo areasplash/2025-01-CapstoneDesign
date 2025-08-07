@@ -86,6 +86,10 @@ public class GameManager : MonoSingleton<GameManager> {
 			}
 		}
 	}
+	public static float TimeScale {
+		get => Time.timeScale;
+		set => Time.timeScale = Mathf.Clamp(value, 0f, 10f);
+	}
 
 	public static Player Player => Instance.m_Player ??= FindAnyObjectByType<Player>();
 
@@ -186,6 +190,14 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	public static void StopEvent(uint id) {
 		if (Events.ContainsKey(id)) RemoveInstances(id);
+	}
+
+	public static void Quit() {
+		#if UNITY_EDITOR
+		EditorApplication.isPlaying = false;
+		#else
+		Application.Quit();
+		#endif
 	}
 
 
