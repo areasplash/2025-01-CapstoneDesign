@@ -12,7 +12,7 @@ using UnityEditor;
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [AddComponentMenu("Utility/Pixelator")]
-[ExecuteAlways, RequireComponent(typeof(Camera))]
+[ExecuteInEditMode, RequireComponent(typeof(Camera))]
 public class Pixelator : MonoBehaviour {
 
 	// Editor
@@ -40,36 +40,69 @@ public class Pixelator : MonoBehaviour {
 			EndHorizontal();
 			Space();
 
+			BeginDisabledGroup(I.SourceObject);
+			I.CullingMask = LayerField("Culling Mask", I.CullingMask);
+			EndDisabledGroup();
+			Space();
+
 			LabelField("Pixelator", EditorStyles.boldLabel);
-			I.TargetObject = ObjectField("Target Object", I.TargetObject);
-			if (I.TargetObject) {
-				var prev = LayerMask.LayerToName(I.TargetObjectLayer);
-				var next = LayerMask.LayerToName(I.TargetObject.layer);
-				if (string.IsNullOrEmpty(prev)) prev = "Empty";
-				if (string.IsNullOrEmpty(next)) next = "Empty";
+			I.SourceObject = ObjectField("Source Object", I.SourceObject);
+			if (I.SourceObject) {
 				var text = string.Empty;
-				text += $"{I.TargetObject.name} layer changed ";
-				text += $"{prev}({I.TargetObjectLayer}) to {next}({I.TargetObject.layer}).";
+				var prev = LayerMask.LayerToName(I.SourceObjectLayer);
+				var next = LayerMask.LayerToName(I.SourceObject.layer);
+				if (string.IsNullOrEmpty(prev)) prev = "Unlayered";
+				if (string.IsNullOrEmpty(next)) next = "Unlayered";
+				text += $"{I.SourceObject.name} layer changed ";
+				text += $"{prev}({I.SourceObjectLayer}) to {next}({I.SourceObject.layer}).";
 				HelpBox(text);
 				BeginVertical(EditorStyles.helpBox);
 				if (true) {
 					LabelField("Transform", EditorStyles.boldLabel);
-					var position = I.TargetObject.transform.localPosition;
-					var rotation = I.TargetObject.transform.localRotation;
-					I.TargetObject.transform.localPosition = Vector3Field("Position", position);
-					I.TargetObject.transform.localRotation = EulerField("Rotation", rotation);
+					var position = I.SourceObject.transform.localPosition;
+					var rotation = I.SourceObject.transform.localRotation;
+					I.SourceObject.transform.localPosition = Vector3Field("Position", position);
+					I.SourceObject.transform.localRotation = Vector3Field("Rotation", rotation);
+					Space();
+				}
+				if (I.SourceObject.TryGetComponent(out Animator animator)) {
+					LabelField("Animator", EditorStyles.boldLabel);
+					var controller = animator.runtimeAnimatorController;
+					animator.runtimeAnimatorController = ObjectField("Controller", controller);
+					if (controller) {
+						var clip = I.SourceObjectAnimationClip;
+						var time = I.SourceObjectAnimationTime;
+						var clips = controller.animationClips;
+						var options = new string[clips.Length];
+						for (int i = 0; i < options.Length; i++) options[i] = clips[i].name;
+						clip = EditorGUILayout.Popup("Animation Clip", clip, options);
+						time = Slider("Animation Time", time, 0f, clips[clip].length);
+						if (I.SourceObjectAnimationClip != clip) time = 0f;
+						bool match = false;
+						match = match || I.SourceObjectAnimationClip != clip;
+						match = match || I.SourceObjectAnimationTime != time;
+						if (match) {
+							var position = I.SourceObject.transform.localPosition;
+							var rotation = I.SourceObject.transform.localRotation;
+							clips[clip].SampleAnimation(I.SourceObject, time);
+							I.SourceObject.transform.localPosition = position;
+							I.SourceObject.transform.localRotation = rotation;
+						}
+						I.SourceObjectAnimationClip = clip;
+						I.SourceObjectAnimationTime = time;
+					}
 					Space();
 				}
 				EndVertical();
 			}
 			I.TargetPath = TextField("Target Path", I.TargetPath);
-			I.TextureSize = IntSlider("Texture Size", I.TextureSize, 16, 256);
+			I.TextureSize = IntSlider("Texture Size", I.TextureSize, 16, 2048);
 			BeginHorizontal();
 			PrefixLabel("Save Pixelated");
 			if (Button("Save")) I.SavePixelated(I.TargetPath);
 			if (Button("Save As")) {
 				var name = "Save Pixelated";
-				var path = EditorUtility.SaveFilePanel(name, "Assets", "pixelated.png", "png");
+				var path = EditorUtility.SaveFilePanel(name, "Assets", "Pixelated.png", "png");
 				if (!string.IsNullOrEmpty(path)) I.SavePixelated(path);
 			}
 			EndHorizontal();
@@ -84,14 +117,14 @@ public class Pixelator : MonoBehaviour {
 		}
 
 		void OnSceneGUI() {
-			if (I.TargetObject) {
+			if (I.SourceObject) {
 				EditorGUI.BeginChangeCheck();
-				var position = I.TargetObject.transform.localPosition;
-				var rotation = I.TargetObject.transform.localRotation;
+				var position = I.SourceObject.transform.localPosition;
+				var rotation = I.SourceObject.transform.localRotation;
 				var positionHandle = Handles.PositionHandle(position, rotation);
 				var rotationHandle = Handles.RotationHandle(rotation, position);
-				I.TargetObject.transform.localPosition = positionHandle;
-				I.TargetObject.transform.localRotation = rotationHandle;
+				I.SourceObject.transform.localPosition = positionHandle;
+				I.SourceObject.transform.localRotation = rotationHandle;
 				if (EditorGUI.EndChangeCheck()) Repaint();
 			}
 		}
@@ -102,6 +135,7 @@ public class Pixelator : MonoBehaviour {
 
 	// Constants
 
+	const int CullingLayer = 31;
 	const TextureFormat Format = TextureFormat.ARGB32;
 	const RenderTextureFormat RenderFormat = RenderTextureFormat.ARGB32;
 
@@ -114,9 +148,11 @@ public class Pixelator : MonoBehaviour {
 	[SerializeField] float m_Projection = 1f;
 
 	RenderTexture m_RenderTexture;
-	[SerializeField] GameObject m_TargetObject;
-	[SerializeField] int m_TargetObjectLayer;
-	[SerializeField] string m_TargetPath = "Assets/pixelated.png";
+	[SerializeField] GameObject m_SourceObject;
+	[SerializeField] int m_SourceObjectLayer;
+	[SerializeField] int m_SourceObjectAnimationClip;
+	[SerializeField] float m_SourceObjectAnimationTime;
+	[SerializeField] string m_TargetPath = "Assets/Pixelated.png";
 	[SerializeField] int m_TextureSize = 64;
 
 
@@ -127,7 +163,7 @@ public class Pixelator : MonoBehaviour {
 		m_Camera = TryGetComponent(out Camera camera) ? camera : null :
 		m_Camera;
 
-	float DollyDistance {
+	public float DollyDistance {
 		get => m_DollyDistance;
 		set {
 			float delta = value - m_DollyDistance;
@@ -138,15 +174,15 @@ public class Pixelator : MonoBehaviour {
 		}
 	}
 
-	float FieldOfView {
+	public float FieldOfView {
 		get => Camera.fieldOfView;
 		set => Camera.fieldOfView = value;
 	}
-	float OrthographicSize {
+	public float OrthographicSize {
 		get => Camera.orthographicSize;
 		set => Camera.orthographicSize = value;
 	}
-	float Projection {
+	public float Projection {
 		get => m_Projection;
 		set {
 			value = Mathf.Clamp(value, 0f, 1f);
@@ -169,6 +205,11 @@ public class Pixelator : MonoBehaviour {
 		}
 	}
 
+	public int CullingMask {
+		get => Camera.cullingMask;
+		set => Camera.cullingMask = value;
+	}
+
 
 
 	RenderTexture RenderTexture {
@@ -176,33 +217,42 @@ public class Pixelator : MonoBehaviour {
 		set => m_RenderTexture = value;
 	}
 
-	GameObject TargetObject {
-		get => m_TargetObject;
+	public GameObject SourceObject {
+		get => m_SourceObject;
 		set {
-			if (m_TargetObject != value) {
-				if (m_TargetObject != null) {
-					m_TargetObject.layer = TargetObjectLayer;
-					TargetObjectLayer = default;
+			if (m_SourceObject != value) {
+				if (m_SourceObject != null) {
+					SwitchLayerRecursive(m_SourceObject, SourceObjectLayer);
 				}
 				if (value != null) {
-					Camera.cullingMask = 1 << 31;
-					TargetObjectLayer = value.layer;
-					value.layer = 31;
-				} else Camera.cullingMask = -1;
-				m_TargetObject = value;
+					SourceObjectLayer = value.layer;
+					SwitchLayerRecursive(value, CullingLayer);
+					CullingMask = 1 << CullingLayer;
+				} else {
+					CullingMask = -1;
+				}
+				m_SourceObject = value;
 			}
 		}
 	}
-	int TargetObjectLayer {
-		get => m_TargetObjectLayer;
-		set => m_TargetObjectLayer = value;
+	int SourceObjectLayer {
+		get => m_SourceObjectLayer;
+		set => m_SourceObjectLayer = value;
 	}
-	string TargetPath {
+	public int SourceObjectAnimationClip {
+		get => m_SourceObjectAnimationClip;
+		set => m_SourceObjectAnimationClip = value;
+	}
+	public float SourceObjectAnimationTime {
+		get => m_SourceObjectAnimationTime;
+		set => m_SourceObjectAnimationTime = value;
+	}
+	public string TargetPath {
 		get => m_TargetPath;
 		set => m_TargetPath = value;
 	}
 
-	int TextureSize {
+	public int TextureSize {
 		get => m_TextureSize;
 		set {
 			value = value / 2 * 2;
@@ -220,7 +270,15 @@ public class Pixelator : MonoBehaviour {
 
 	// Methods
 
-	void SavePixelated(string path) {
+	void SwitchLayerRecursive(GameObject gameObject, int layer) {
+		gameObject.layer = layer;
+		foreach (Transform child in gameObject.transform) {
+			SwitchLayerRecursive(child.gameObject, layer);
+		}
+	}
+
+	#if UNITY_EDITOR
+	public void SavePixelated(string path) {
 		var color = Camera.backgroundColor;
 		Camera.backgroundColor = Color.clear;
 		Camera.Render();
@@ -241,12 +299,13 @@ public class Pixelator : MonoBehaviour {
 			DestroyImmediate(texture);
 		}
 	}
+	#endif
 
 
 
 	// Lifecycle
 
-	void Awake() {
+	void OnEnable() {
 		Camera.orthographic = true;
 		Camera.clearFlags = CameraClearFlags.SolidColor;
 		Camera.backgroundColor = new(0.16f, 0.16f, 0.16f, 1f);
@@ -261,15 +320,15 @@ public class Pixelator : MonoBehaviour {
 		RenderTexture.Create();
 	}
 
-	void OnDestroy() {
+	void OnDisable() {
 		if (RenderTexture != null) {
 			Camera.targetTexture = null;
 			if (RenderTexture.IsCreated()) RenderTexture.Release();
 			DestroyImmediate(RenderTexture);
 			RenderTexture = null;
 		}
-		if (TargetObject != null) {
-			TargetObject.layer = TargetObjectLayer;
+		if (SourceObject != null) {
+			SourceObject.layer = SourceObjectLayer;
 		}
 	}
 }

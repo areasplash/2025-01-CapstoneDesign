@@ -295,11 +295,11 @@ public class EditorExtensions : Editor {
 		return new Quaternion(vector.x, vector.y, vector.z, vector.w);
 	}
 
-	public Quaternion EulerField(Quaternion value) {
-		return EulerField(string.Empty, value);
+	public Quaternion Vector3Field(Quaternion value) {
+		return Vector3Field(string.Empty, value);
 	}
 
-	public Quaternion EulerField(string label, Quaternion value) {
+	public Quaternion Vector3Field(string label, Quaternion value) {
 		var vector = value.eulerAngles;
 		vector = EditorGUILayout.Vector3Field(label, vector);
 		return Quaternion.Euler(vector);
@@ -317,7 +317,7 @@ public class EditorExtensions : Editor {
 		return EditorGUILayout.ColorField(value);
 	}
 
-	public Vector4 Color3Field(string label, Vector4 value) {
+	public Vector4 ColorField(string label, Vector4 value) {
 		return EditorGUILayout.ColorField(label, value);
 	}
 
@@ -327,20 +327,6 @@ public class EditorExtensions : Editor {
 
 	public T EnumField<T>(string label, T value) where T : Enum {
 		return (T)EditorGUILayout.EnumPopup(label, value);
-	}
-
-	public T TextEnumField<T>(T value) where T : Enum {
-		return TextEnumField(string.Empty, value);
-	}
-
-	public T TextEnumField<T>(string label, T value) where T : Enum {
-		EditorGUILayout.BeginHorizontal();
-		PrefixLabel(label);
-		var name = EditorGUILayout.TextField(value.ToString());
-		if (Enum.TryParse(typeof(T), name, false, out var t)) value = (T)t;
-		value = (T)EditorGUILayout.EnumPopup(value);
-		EditorGUILayout.EndHorizontal();
-		return value;
 	}
 
 	public uint FlagField<T>(uint value, uint mask = uint.MaxValue) where T : Enum {
@@ -363,6 +349,14 @@ public class EditorExtensions : Editor {
 			result |= 1u << indices[i];
 		}
 		return result;
+	}
+
+	public byte FlagField<T>(byte value, byte mask = byte.MaxValue) where T : Enum {
+		return (byte)FlagField<T>(string.Empty, value, (uint)mask);
+	}
+
+	public byte FlagField<T>(string label, byte value, byte mask = byte.MaxValue) where T : Enum {
+		return (byte)FlagField<T>(label, value, (uint)mask);
 	}
 
 	public int LayerField(int layer) {
@@ -430,6 +424,78 @@ public class EditorExtensions : Editor {
 
 	public void PropertyField(string name) {
 		EditorGUILayout.PropertyField(serializedObject.FindProperty(name));
+	}
+
+
+
+	// Composite Methods
+
+	public T TextEnumField<T>(T value) where T : Enum {
+		return TextEnumField(string.Empty, value);
+	}
+
+	public T TextEnumField<T>(string label, T value) where T : Enum {
+		EditorGUILayout.BeginHorizontal();
+		PrefixLabel(label);
+		var name = EditorGUILayout.TextField(value.ToString());
+		if (Enum.TryParse(typeof(T), name, false, out var t)) value = (T)t;
+		value = (T)EditorGUILayout.EnumPopup(value);
+		EditorGUILayout.EndHorizontal();
+		return value;
+	}
+
+	public void DictionaryField<K, V>(
+		string label, Dictionary<K, V> dictionary,
+		Action<List<(K key, V value)>, int> action,
+		(K key, V value) pair) {
+		PrefixLabel(label);
+		BeginVertical(EditorStyles.helpBox);
+		var list = new List<(K, V)>(dictionary.Count);
+		foreach (var (key, value) in dictionary) list.Add((key, value));
+		for (int i = 0; i < list.Count; i++) {
+			BeginHorizontal();
+			action?.Invoke(list, i);
+			if (Button("-", GUILayout.Width(18f))) list.RemoveAt(i--);
+			EndHorizontal();
+		}
+		dictionary.Clear();
+		foreach (var (key, value) in list) dictionary.TryAdd(key, value);
+		if (Button("+", GUILayout.Width(18f))) dictionary.TryAdd(pair.key, pair.value);
+		EndVertical();
+	}
+
+	public int BookField<T>(
+		ICollection<T> collection, int length, int page, Action<bool, int, T> action) {
+		int min = 0;
+		int max = Mathf.Max(min, (collection.Count - 1) / length);
+		page = Mathf.Clamp(page, min, max);
+		int a = length * page;
+		int b = collection.Count < length ? collection.Count : length * (page + 1);
+		int m = Mathf.Min(b, collection.Count);
+		var enumerator = collection.GetEnumerator();
+		for (int i = 0; i < a; i++) enumerator.MoveNext();
+		for (int i = a; i < b; i++) {
+			enumerator.MoveNext();
+			BeginVertical(EditorStyles.helpBox);
+			action?.Invoke(i < m, i, enumerator.Current);
+			EndVertical();
+		}
+		BeginHorizontal();
+		FlexibleSpace();
+		BeginDisabledGroup(page <= min);
+		if (Button("〈 ", GUILayout.Width(24f))) page--;
+		EndDisabledGroup();
+		var index = $"{page + 1} / {max + 1}";
+		var center = new GUIStyle(EditorStyles.label) {
+			alignment = TextAnchor.MiddleCenter,
+		};
+		LabelField(index, center, GUILayout.Width(48));
+		BeginDisabledGroup(max <= page);
+		if (Button(" 〉", GUILayout.Width(24f))) page++;
+		EndDisabledGroup();
+		FlexibleSpace();
+		EndHorizontal();
+		return page;
 	}
 
 

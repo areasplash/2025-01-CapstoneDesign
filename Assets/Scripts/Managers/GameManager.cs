@@ -15,6 +15,15 @@ public enum GameState : byte {
 	Paused,
 }
 
+public enum Compare : byte {
+	Equal,
+	NotEqual,
+	LessThan,
+	LessThanOrEqual,
+	GreaterThan,
+	GreaterThanOrEqual,
+}
+
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -33,6 +42,32 @@ public class GameManager : MonoSingleton<GameManager> {
 		public override void OnInspectorGUI() {
 			Begin("Game Manager");
 			I.TrySetInstance();
+
+			LabelField("Game Data", EditorStyles.boldLabel);
+			DictionaryField("Int Value", IntValue, (list, index) => {
+				var pair = list[index];
+				pair.key = TextField(pair.key);
+				pair.value = IntField(pair.value);
+				list[index] = pair;
+			}, ($"New Key {IntValue.Count}", default));
+			DictionaryField("Float Value", FloatValue, (list, index) => {
+				var pair = list[index];
+				pair.key = TextField(pair.key);
+				pair.value = FloatField(pair.value);
+				list[index] = pair;
+			}, ($"New Key {FloatValue.Count}", default));
+			DictionaryField("String Value", StringValue, (list, index) => {
+				var pair = list[index];
+				pair.key = TextField(pair.key);
+				pair.value = TextField(pair.value);
+				list[index] = pair;
+			}, ($"New Key {StringValue.Count}", default));
+			Space();
+			BeginHorizontal();
+			if (Button("Save Data")) SaveData();
+			if (Button("Load Data")) LoadData();
+			EndHorizontal();
+			Space();
 
 			LabelField("Debug", EditorStyles.boldLabel);
 			BeginDisabledGroup();
@@ -59,9 +94,12 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	GameState m_GameState;
 	Player m_Player;
-	[SerializeField] HashMap<string, int> m_Inventory = new();
 	[SerializeField] int m_Gem;
 	public bool m_Negative = false;
+
+	[SerializeField] HashMap<string, int> m_IntValue = new();
+	[SerializeField] HashMap<string, float> m_FloatValue = new();
+	[SerializeField] HashMap<string, string> m_StringValue = new();
 
 	Dictionary<uint, byte> m_Events = new();
 	List<(uint, EventBase, float)> m_EventList = new();
@@ -93,14 +131,21 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	public static Player Player => Instance.m_Player ??= FindAnyObjectByType<Player>();
 
-	public static HashMap<string, int> Inventory {
-		get => Instance.m_Inventory;
-		set => Instance.m_Inventory = value;
-	}
-
 	public static int Gem {
 		get => Instance.m_Gem;
 		private set => Instance.m_Gem = value;
+	}
+
+
+
+	public static HashMap<string, int> IntValue {
+		get => Instance.m_IntValue;
+	}
+	public static HashMap<string, float> FloatValue {
+		get => Instance.m_FloatValue;
+	}
+	public static HashMap<string, string> StringValue {
+		get => Instance.m_StringValue;
 	}
 
 
@@ -117,6 +162,32 @@ public class GameManager : MonoSingleton<GameManager> {
 
 
 	// Methods
+
+	public static void SaveData() {
+		foreach (var (key, value) in IntValue) {
+			PlayerPrefs.SetInt(key, value);
+		}
+		foreach (var (key, value) in FloatValue) {
+			PlayerPrefs.SetFloat(key, value);
+		}
+		foreach (var (key, value) in StringValue) {
+			PlayerPrefs.SetString(key, value);
+		}
+	}
+
+	public static void LoadData() {
+		foreach (var key in IntValue.Keys) {
+			IntValue[key] = PlayerPrefs.GetInt(key);
+		}
+		foreach (var key in FloatValue.Keys) {
+			FloatValue[key] = PlayerPrefs.GetFloat(key);
+		}
+		foreach (var key in StringValue.Keys) {
+			StringValue[key] = PlayerPrefs.GetString(key);
+		}
+	}
+
+
 
 	public static void CollectGem(int amount) {
 		Gem += amount;
