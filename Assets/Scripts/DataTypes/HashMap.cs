@@ -1,49 +1,36 @@
 using UnityEngine;
-using UnityEngine.UI;
+using System;
+using System.Collections.Generic;
 
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Base Canvas
+// Hash Map
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[RequireComponent(typeof(Canvas))]
-public abstract class BaseCanvas : MonoBehaviour {
+[Serializable]
+public class HashMap<K, V> : Dictionary<K, V>, ISerializationCallbackReceiver {
 
 	// Fields
 
-	GraphicRaycaster m_Raycaster;
-
-
-
-	// Properties
-
-	protected GraphicRaycaster Raycaster =>
-		m_Raycaster || TryGetComponent(out m_Raycaster) ?
-		m_Raycaster : null;
+	[SerializeField] List<K> k = new();
+	[SerializeField] List<V> v = new();
 
 
 
 	// Methods
 
-	public virtual void Show() {
-		gameObject.SetActive(true);
+	public void OnBeforeSerialize() {
+		k.Clear();
+		v.Clear();
+		foreach (var (k, v) in this) {
+			this.k.Add(k);
+			this.v.Add(v);
+		}
 	}
 
-	public virtual void Hide(bool keepState = false) {
-		gameObject.SetActive(false);
-	}
-
-	public virtual void Back() {
-		UIManager.PopOverlay();
-	}
-
-
-
-	// Lifecycle
-
-	protected virtual void Update() {
-		if (UIManager.CurrentCanvas != this) return;
-		if (InputManager.GetKeyUp(KeyAction.Cancel)) Back();
+	public void OnAfterDeserialize() {
+		Clear();
+		for (int i = 0; i < k.Count; i++) Add(k[i], v[i]);
 	}
 }

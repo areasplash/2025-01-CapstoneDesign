@@ -51,9 +51,11 @@ public class InputManager : MonoSingleton<InputManager> {
 		InputManager I => target as InputManager;
 		public override void OnInspectorGUI() {
 			Begin("Input Manager");
+			I.TrySetInstance();
 
 			LabelField("Web Cam", EditorStyles.boldLabel);
-			RawImage = ObjectField("Web Cam Image", RawImage);
+			CaptureWebCam = Toggle("Capture Web Cam", CaptureWebCam);
+			if (CaptureWebCam) RawImage = ObjectField("Web Cam Image", RawImage);
 			Space();
 			LabelField("Debug", EditorStyles.boldLabel);
 			BeginDisabledGroup();
@@ -86,6 +88,7 @@ public class InputManager : MonoSingleton<InputManager> {
 	Vector2 m_ScrollWheel;
 	Vector2 m_Navigate;
 
+	[SerializeField] bool m_CaptureWebCam = true;
 	WebCamTexture m_WebCamTexture;
 	Texture2D m_CachedWebCamTexture;
 	[SerializeField] RawImage m_RawImage;
@@ -129,6 +132,10 @@ public class InputManager : MonoSingleton<InputManager> {
 
 
 
+	public static bool CaptureWebCam {
+		get => Instance.m_CaptureWebCam;
+		set => Instance.m_CaptureWebCam = value;
+	}
 	static WebCamTexture WebCamTexture {
 		get => Instance.m_WebCamTexture;
 		set => Instance.m_WebCamTexture = value;
@@ -192,14 +199,14 @@ public class InputManager : MonoSingleton<InputManager> {
 	void Start() => RegisterActionMap();
 
 	void Update() {
+		if (!CaptureWebCam) return;
 		float time = Time.realtimeSinceStartup;
 		if ((time + Time.unscaledDeltaTime) % WebCamUpdateInterval < time % WebCamUpdateInterval) {
 			if (!WebCamTexture && 0 < WebCamTexture.devices.Length) {
 				WebCamTexture = new WebCamTexture(WebCamTexture.devices[0].name);
 				WebCamTexture.Play();
 			}
-			if (WebCamTexture)
-			{
+			if (WebCamTexture) {
 				CachedWebCamTexture ??= new Texture2D(WebCamTexture.width, WebCamTexture.height);
 				CachedWebCamTexture.SetPixels(WebCamTexture.GetPixels());
 				CachedWebCamTexture.Apply();
@@ -210,12 +217,10 @@ public class InputManager : MonoSingleton<InputManager> {
 						Debug.Log("분석 감정: " + result.emotion_result.emotion);
 						if (result.emotion_result.emotion == "sadness" || result.emotion_result.emotion == "anger") {
 							GameManager.Instance.m_Negative = true;
-						}
-						else {
+						} else {
 							GameManager.Instance.m_Negative = false;
 						}
-					}
-					else {
+					} else {
 						Debug.LogWarning("이미지 분석 실패!");
 					}
             	});

@@ -21,6 +21,7 @@ public class CameraManager : MonoSingleton<CameraManager> {
 		CameraManager I => target as CameraManager;
 		public override void OnInspectorGUI() {
 			Begin("Camera Manager");
+			I.TrySetInstance();
 
 			if (MainCamera) {
 				LabelField("Camera", EditorStyles.boldLabel);

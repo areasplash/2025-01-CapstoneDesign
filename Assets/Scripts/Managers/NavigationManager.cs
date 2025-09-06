@@ -25,6 +25,7 @@ public sealed class NavigationManager : MonoSingleton<NavigationManager> {
 		NavigationManager I => target as NavigationManager;
 		public override void OnInspectorGUI() {
 			Begin("Navigation Manager");
+			I.TrySetInstance();
 
 			LabelField("Navigation", EditorStyles.boldLabel);
 			BeginHorizontal();
