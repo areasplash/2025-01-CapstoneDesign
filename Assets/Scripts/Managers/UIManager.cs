@@ -44,6 +44,7 @@ public class UIManager : MonoSingleton<UIManager> {
 	GameCanvas m_GameCanvas;
 	DialogueCanvas m_DialogueCanvas;
 	InventoryCanvas m_InventoryCanvas;
+	InventoryUICanvas m_InventoryUICanvas;
 
 	BaseCanvas m_MainCanvas;
 	Stack<BaseCanvas> m_OverlayCanvas = new();
@@ -63,6 +64,10 @@ public class UIManager : MonoSingleton<UIManager> {
 	static InventoryCanvas InventoryCanvas =>
 		Instance.m_InventoryCanvas || TryGetComponentInChildren(out Instance.m_InventoryCanvas) ?
 		Instance.m_InventoryCanvas : null;
+
+	static InventoryUICanvas InventoryUICanvas =>
+		Instance.m_InventoryUICanvas || TryGetComponentInChildren(out Instance.m_InventoryUICanvas) ?
+		Instance.m_InventoryUICanvas : null;
 
 
 
@@ -121,6 +126,7 @@ public class UIManager : MonoSingleton<UIManager> {
 
 	public static void OpenDialogue()  => OpenOverlayCanvas(DialogueCanvas);
 	public static void OpenInventory() => OpenOverlayCanvas(InventoryCanvas);
+	public static void OpenInventoryUI() => OpenOverlayCanvas(InventoryUICanvas);
 
 	static void OpenOverlayCanvas(BaseCanvas overlayCanvas) {
 		if (overlayCanvas == CurrentCanvas) return;

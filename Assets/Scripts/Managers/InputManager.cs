@@ -31,6 +31,7 @@ public enum KeyAction : byte {
 	Cancel,
 	TrackedDevicePosition,
 	TrackedDeviceOrientation,
+	QuickSlot,
 }
 
 
@@ -87,6 +88,7 @@ public class InputManager : MonoSingleton<InputManager> {
 	Vector2 m_PointPosition;
 	Vector2 m_ScrollWheel;
 	Vector2 m_Navigate;
+	float m_QuickSlot;
 
 	[SerializeField] bool m_CaptureWebCam = true;
 	WebCamTexture m_WebCamTexture;
@@ -129,7 +131,10 @@ public class InputManager : MonoSingleton<InputManager> {
 		get         => Instance.m_Navigate;
 		private set => Instance.m_Navigate = value;
 	}
-
+	public static float QuickSlot {
+		get         => Instance.m_QuickSlot;
+		private set => Instance.m_QuickSlot = value;
+	}
 
 
 	public static bool CaptureWebCam {
@@ -166,6 +171,11 @@ public class InputManager : MonoSingleton<InputManager> {
 					KeyAction.Point       => callback => PointPosition = callback.ReadValue<Vector2>(),
 					KeyAction.ScrollWheel => callback => ScrollWheel   = callback.ReadValue<Vector2>(),
 					KeyAction.Navigate    => callback => Navigate      = callback.ReadValue<Vector2>(),
+					KeyAction.QuickSlot   => callback => {
+						var value = (int)callback.ReadValue<float>();
+						QuickSlotManager.Instance.SelectSlot(value - 1);
+						Debug.Log($"{value}");
+					},
 					_ => callback => _ = callback.action.IsPressed() switch {
 						true  => KeyNext |=  (1u << index),
 						false => KeyNext &= ~(1u << index),

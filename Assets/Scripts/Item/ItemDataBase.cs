@@ -1,6 +1,16 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+public enum ItemType {
+    Special,
+    Tool,
+    Seed,
+    Food,
+    Equipment,
+    MapObject,
+    ETC
+}
+
 public class ItemDataBase : MonoSingleton<ItemDataBase>
 {
     // 인스펙터에서 관리 용
@@ -8,8 +18,7 @@ public class ItemDataBase : MonoSingleton<ItemDataBase>
     // 런타임 용 (해시맵)
     private Dictionary<string, ItemData> itemDict;
 
-    protected override void Awake()
-    {
+    protected override void Awake() {
         base.Awake();
         // 인스펙터에 등록한 리스트 기반으로 Dictionary 제작
         itemDict = new Dictionary<string, ItemData>();
@@ -19,8 +28,7 @@ public class ItemDataBase : MonoSingleton<ItemDataBase>
         }
     }
 
-    public ItemData GetItemData(string itemId)
-    {
+    public ItemData GetItemData(string itemId) {
         return itemDict.ContainsKey(itemId) ? itemDict[itemId] : null;
     }
 

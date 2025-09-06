@@ -17,7 +17,7 @@ public abstract class MonoSingleton<T> : MonoBehaviour where T : MonoBehaviour {
 
 	// Properties
 
-	protected static T Instance => instance ??= FindAnyObjectByType<T>();
+	public static T Instance => instance ??= FindAnyObjectByType<T>();
 
 
 

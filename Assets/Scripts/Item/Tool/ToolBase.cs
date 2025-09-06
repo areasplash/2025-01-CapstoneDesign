@@ -3,6 +3,12 @@ using UnityEngine;
 public abstract class ToolBase : MonoBehaviour
 {
     public ItemData ItemData { get; private set; }
+    protected ToolVisual toolVisual;
+
+    protected virtual void Awake() {
+        toolVisual = GetComponent<ToolVisual>();
+    }
+
     // 각 ToolBase 구현 클래스에서 구현
     public abstract void Use();
 

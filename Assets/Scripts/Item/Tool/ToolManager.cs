@@ -34,7 +34,7 @@ public class ToolManager : MonoBehaviour
         ItemBase testItem = new ToolItem(ItemDataBase.Instance.GetItemData("CarrotSeed"));
         testItem.Use();
         //EquipTool(ItemDataBase.Instance.GetItemData("CarrotSeed"));
-        equippedTool.Use();
+        //equippedTool.Use();
     }
 
     // Update is called once per frame
