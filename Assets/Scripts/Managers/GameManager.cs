@@ -10,10 +10,18 @@ using UnityEditor;
 // Game States
 
 public enum GameState : byte {
-	None,
 	Gameplay,
 	Cutscene,
 	Paused,
+}
+
+public enum Compare : byte {
+	Equal,
+	NotEqual,
+	LessThan,
+	LessThanOrEqual,
+	GreaterThan,
+	GreaterThanOrEqual,
 }
 
 
@@ -34,6 +42,32 @@ public class GameManager : MonoSingleton<GameManager> {
 		public override void OnInspectorGUI() {
 			Begin("Game Manager");
 			I.TrySetInstance();
+
+			LabelField("Game Data", EditorStyles.boldLabel);
+			DictionaryField("Int Value", IntValue, (list, index) => {
+				var pair = list[index];
+				pair.key = TextField(pair.key);
+				pair.value = IntField(pair.value);
+				list[index] = pair;
+			}, ($"New Key {IntValue.Count}", default));
+			DictionaryField("Float Value", FloatValue, (list, index) => {
+				var pair = list[index];
+				pair.key = TextField(pair.key);
+				pair.value = FloatField(pair.value);
+				list[index] = pair;
+			}, ($"New Key {FloatValue.Count}", default));
+			DictionaryField("String Value", StringValue, (list, index) => {
+				var pair = list[index];
+				pair.key = TextField(pair.key);
+				pair.value = TextField(pair.value);
+				list[index] = pair;
+			}, ($"New Key {StringValue.Count}", default));
+			Space();
+			BeginHorizontal();
+			if (Button("Save Data")) SaveData();
+			if (Button("Load Data")) LoadData();
+			EndHorizontal();
+			Space();
 
 			LabelField("Debug", EditorStyles.boldLabel);
 			BeginDisabledGroup();
@@ -60,13 +94,16 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	GameState m_GameState;
 	Player m_Player;
-	[SerializeField] HashMap<string, int> m_Inventory = new();
 	[SerializeField] int m_Gem;
 	public bool m_Negative = false;
 
+	[SerializeField] HashMap<string, int> m_IntValue = new();
+	[SerializeField] HashMap<string, float> m_FloatValue = new();
+	[SerializeField] HashMap<string, string> m_StringValue = new();
+
 	Dictionary<uint, byte> m_Events = new();
-	List<(uint, BaseEvent, float)> m_EventList = new();
-	List<BaseEvent> m_EventBuffer = new();
+	List<(uint, EventBase, float)> m_EventList = new();
+	List<EventBase> m_EventBuffer = new();
 	uint m_EventID;
 
 
@@ -87,13 +124,12 @@ public class GameManager : MonoSingleton<GameManager> {
 			}
 		}
 	}
+	public static float TimeScale {
+		get => Time.timeScale;
+		set => Time.timeScale = Mathf.Clamp(value, 0f, 10f);
+	}
 
 	public static Player Player => Instance.m_Player ??= FindAnyObjectByType<Player>();
-
-	public static HashMap<string, int> Inventory {
-		get => Instance.m_Inventory;
-		set => Instance.m_Inventory = value;
-	}
 
 	public static int Gem {
 		get => Instance.m_Gem;
@@ -102,9 +138,21 @@ public class GameManager : MonoSingleton<GameManager> {
 
 
 
+	public static HashMap<string, int> IntValue {
+		get => Instance.m_IntValue;
+	}
+	public static HashMap<string, float> FloatValue {
+		get => Instance.m_FloatValue;
+	}
+	public static HashMap<string, string> StringValue {
+		get => Instance.m_StringValue;
+	}
+
+
+
 	static Dictionary<uint, byte> Events => Instance.m_Events;
-	static List<(uint, BaseEvent, float)> EventList => Instance.m_EventList;
-	static List<BaseEvent> EventBuffer => Instance.m_EventBuffer;
+	static List<(uint, EventBase, float)> EventList => Instance.m_EventList;
+	static List<EventBase> EventBuffer => Instance.m_EventBuffer;
 
 	static uint EventID {
 		get => Instance.m_EventID;
@@ -115,6 +163,32 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	// Methods
 
+	public static void SaveData() {
+		foreach (var (key, value) in IntValue) {
+			PlayerPrefs.SetInt(key, value);
+		}
+		foreach (var (key, value) in FloatValue) {
+			PlayerPrefs.SetFloat(key, value);
+		}
+		foreach (var (key, value) in StringValue) {
+			PlayerPrefs.SetString(key, value);
+		}
+	}
+
+	public static void LoadData() {
+		foreach (var key in IntValue.Keys) {
+			IntValue[key] = PlayerPrefs.GetInt(key);
+		}
+		foreach (var key in FloatValue.Keys) {
+			FloatValue[key] = PlayerPrefs.GetFloat(key);
+		}
+		foreach (var key in StringValue.Keys) {
+			StringValue[key] = PlayerPrefs.GetString(key);
+		}
+	}
+
+
+
 	public static void CollectGem(int amount) {
 		Gem += amount;
 		UIManager.ShowGemCollectMessage("야호! {" + amount + "}마음 보석을 획득했어!");
@@ -124,7 +198,7 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	// Instance Methods
 
-	static uint AddInstance(BaseEvent baseEvent) {
+	static uint AddInstance(EventBase baseEvent) {
 		if (baseEvent == null) return default;
 		while (++EventID == default || Events.ContainsKey(EventID));
 		Events.Add(EventID, 1);
@@ -187,6 +261,14 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	public static void StopEvent(uint id) {
 		if (Events.ContainsKey(id)) RemoveInstances(id);
+	}
+
+	public static void Quit() {
+		#if UNITY_EDITOR
+		EditorApplication.isPlaying = false;
+		#else
+		Application.Quit();
+		#endif
 	}
 
 

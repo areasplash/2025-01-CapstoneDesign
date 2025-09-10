@@ -1,13 +1,7 @@
 using UnityEngine;
-using UnityEngine.UIElements;
-using System.Collections.Generic;
-using System;
-using System.Linq;
 
 #if UNITY_EDITOR
-using UnityEditor;
-using UnityEditor.UIElements;
-using UnityEditor.Experimental.GraphView;
+using static EditorVisualElement;
 #endif
 
 
@@ -17,23 +11,21 @@ using UnityEditor.Experimental.GraphView;
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("Actor/Set Emotion")]
-public class SetEmotionEvent : BaseEvent {
+public class SetEmotionEvent : EventBase {
 
 	// Node
 
 	#if UNITY_EDITOR
-	public class SetEmotionEventNode : BaseEventNode {
+	public class SetEmotionEventNode : EventNodeBase {
 		SetEmotionEvent I => target as SetEmotionEvent;
 
 		public SetEmotionEventNode() : base() {
-			mainContainer.style.minWidth = mainContainer.style.maxWidth = DefaultNodeWidth;
+			mainContainer.style.minWidth = mainContainer.style.maxWidth = Node1U;
 		}
 
 		public override void ConstructData() {
-			var instance = new ObjectField() { value = I.instance };
-			var emotion = new EnumField(Emotion.None) { value = I.emotion };
-			instance.RegisterValueChangedCallback(evt => I.instance = evt.newValue as GameObject);
-			emotion.RegisterValueChangedCallback(evt => I.emotion = (Emotion)evt.newValue);
+			var instance = ObjectField(I.instance, value => I.instance = value);
+			var emotion  = EnumField(I.emotion, value => I.emotion = value);
 			mainContainer.Add(instance);
 			mainContainer.Add(emotion);
 		}
@@ -55,11 +47,11 @@ public class SetEmotionEvent : BaseEvent {
 		if (instance && instance.TryGetComponent(out Actor actor)) actor.Emotion = emotion;
 	}
 
-	public override void CopyFrom(BaseEvent data) {
-		base.CopyFrom(data);
-		if (data is SetEmotionEvent setEmotion) {
-			instance = setEmotion.instance;
-			emotion = setEmotion.emotion;
+	public override void CopyFrom(EventBase eventBase) {
+		base.CopyFrom(eventBase);
+		if (eventBase is SetEmotionEvent setEmotionEvent) {
+			instance = setEmotionEvent.instance;
+			emotion  = setEmotionEvent.emotion;
 		}
 	}
 }
@@ -71,23 +63,21 @@ public class SetEmotionEvent : BaseEvent {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("Actor/Look At")]
-public class LookAtEvent : BaseEvent {
+public class LookAtEvent : EventBase {
 
 	// Node
 
 	#if UNITY_EDITOR
-	public class LookAtEventNode : BaseEventNode {
+	public class LookAtEventNode : EventNodeBase {
 		LookAtEvent I => target as LookAtEvent;
 
 		public LookAtEventNode() : base() {
-			mainContainer.style.minWidth = mainContainer.style.maxWidth = DefaultNodeWidth;
+			mainContainer.style.minWidth = mainContainer.style.maxWidth = Node1U;
 		}
 
 		public override void ConstructData() {
-			var instance = new ObjectField() { value = I.instance };
-			var target = new ObjectField() { value = I.target };
-			instance.RegisterValueChangedCallback(evt => I.instance = evt.newValue as GameObject);
-			target.RegisterValueChangedCallback(evt => I.target = evt.newValue as GameObject);
+			var instance = ObjectField(I.instance, value => I.instance = value);
+			var target   = ObjectField(I.target, value => I.target = value);
 			mainContainer.Add(instance);
 			mainContainer.Add(target);
 		}
@@ -109,11 +99,11 @@ public class LookAtEvent : BaseEvent {
 		if (instance && instance.TryGetComponent(out Actor actor)) actor.LookAt(target);
 	}
 
-	public override void CopyFrom(BaseEvent data) {
-		base.CopyFrom(data);
-		if (data is LookAtEvent lookAt) {
-			instance = lookAt.instance;
-			target = lookAt.target;
+	public override void CopyFrom(EventBase eventBase) {
+		base.CopyFrom(eventBase);
+		if (eventBase is LookAtEvent lookAtEvent) {
+			instance = lookAtEvent.instance;
+			target   = lookAtEvent.target;
 		}
 	}
 }
@@ -125,25 +115,22 @@ public class LookAtEvent : BaseEvent {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("Actor/Calculate Path")]
-public class CalculatePathEvent : BaseEvent {
+public class CalculatePathEvent : EventBase {
 
 	// Node
 
 	#if UNITY_EDITOR
-	public class CalculatePathEventNode : BaseEventNode {
+	public class CalculatePathEventNode : EventNodeBase {
 		CalculatePathEvent I => target as CalculatePathEvent;
 
 		public CalculatePathEventNode() : base() {
-			mainContainer.style.minWidth = mainContainer.style.maxWidth = ExtendedNodeWidth;
+			mainContainer.style.minWidth = mainContainer.style.maxWidth = Node2U;
 		}
 
 		public override void ConstructData() {
-			var instance = new ObjectField("Actor") { value = I.instance };
-			var target = new ObjectField("Target") { value = I.target };
-			var threshold = new FloatField("Threshold") { value = I.threshold };
-			instance.RegisterValueChangedCallback(evt => I.instance = evt.newValue as GameObject);
-			target.RegisterValueChangedCallback(evt => I.target = evt.newValue as GameObject);
-			threshold.RegisterValueChangedCallback(evt => I.threshold = evt.newValue);
+			var instance  = ObjectField(I.instance, value => I.instance = value);
+			var target    = ObjectField(I.target, value => I.target = value);
+			var threshold = FloatField(I.threshold, value => I.threshold = value);
 			mainContainer.Add(instance);
 			mainContainer.Add(target);
 			mainContainer.Add(threshold);
@@ -175,12 +162,12 @@ public class CalculatePathEvent : BaseEvent {
 		} else return true;
 	}
 
-	public override void CopyFrom(BaseEvent data) {
-		base.CopyFrom(data);
-		if (data is CalculatePathEvent calculatePath) {
-			instance = calculatePath.instance;
-			target = calculatePath.target;
-			threshold = calculatePath.threshold;
+	public override void CopyFrom(EventBase eventBase) {
+		base.CopyFrom(eventBase);
+		if (eventBase is CalculatePathEvent calculatePathEvent) {
+			instance  = calculatePathEvent.instance;
+			target    = calculatePathEvent.target;
+			threshold = calculatePathEvent.threshold;
 		}
 	}
 }

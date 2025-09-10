@@ -173,7 +173,22 @@ public class DialogueCanvas : BaseCanvas {
 
 
 
+	/*
+	Dialogue Method Manual
+
+	Use like this:
+	"Text...text{Delay(50)}text";
+	{MethodName(Argument0, Argument1, ...)}
+
+	Method List:
+	- Delay(float seconds)
+	- IntValue(string key, string format = "N0")
+	- FloatValue(string key, string format = "F2")
+	- StringValue(string key)
+	*/
+
 	bool TryGetFunction(string text, int start, out int end, out string func, out string[] args) {
+		const StringSplitOptions RemoveEntries = StringSplitOptions.RemoveEmptyEntries;
 		static bool IsValid(int a, int b) => (0 <= a) && (a < b);
 		int a = text.IndexOf('{', start);
 		int b = text.IndexOf('}', a + 1);
@@ -184,7 +199,7 @@ public class DialogueCanvas : BaseCanvas {
 			bool isValid = IsValid(c, d);
 			end = b + 1;
 			func = isValid ? fullCommand[..c] : fullCommand;
-			args = isValid ? fullCommand[(c + 1)..d].Split(',') : null;
+			args = isValid ? fullCommand[(c + 1)..d].Split(',', RemoveEntries) : null;
 			return true;
 		} else {
 			end = -1;
@@ -216,6 +231,20 @@ public class DialogueCanvas : BaseCanvas {
 							if (isArgsValid && float.TryParse(args[0], out float delay)) {
 								TextDisplayTimer = delay;
 							}
+							break;
+						case "IntValue":
+							if (isArgsValid) TextText += (1 < args.Length) ?
+								GameManager.IntValue[args[0]].ToString(args[1]) :
+								GameManager.IntValue[args[0]].ToString("N0");
+							break;
+						case "FloatValue":
+							if (isArgsValid) TextText += (1 < args.Length) ?
+								GameManager.FloatValue[args[0]].ToString(args[1]) :
+								GameManager.FloatValue[args[0]].ToString("F2");
+							break;
+						case "StringValue":
+							if (isArgsValid) TextText +=
+								GameManager.StringValue[args[0]];
 							break;
 					}
 					TextIndex = end;
