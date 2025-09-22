@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Audio;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -9,19 +10,17 @@ using UnityEditor;
 
 
 
-// Audio Clips
-
 public enum Audio {
 	None,
 }
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Audio Manager
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[AddComponentMenu("Manager/Audio Manager")]
+[AddComponentMenu("Singleton Manager/Audio Manager")]
 public sealed class AudioManager : MonoSingleton<AudioManager> {
 
 	// Editor
@@ -30,9 +29,9 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	[CustomEditor(typeof(AudioManager))]
 	class AudioManagerEditor : EditorExtensions {
 		AudioManager I => target as AudioManager;
+		int Page { get; set; } = 0;
 		public override void OnInspectorGUI() {
-			Begin("Audio Manager");
-			I.TrySetInstance();
+			Begin();
 
 			LabelField("Audio Mixer", EditorStyles.boldLabel);
 			AudioMixer   = ObjectField("Audio Mixer",   AudioMixer);
@@ -44,35 +43,41 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 			AudioTemplate = ObjectField("Audio Template", AudioTemplate);
 			if (AudioTemplate == null) {
 				var message = string.Empty;
-				message += "Audio Template is missing.\n";
-				message += "Create an Audio Source as a child of this object and assign it here.";
-				HelpBox(message, MessageType.Warning);
+				message += $"Audio Template is missing.\n";
+				message += $"Please assign a Audio Template here.";
+				HelpBox(message, MessageType.Info);
 				Space();
 			} else {
-				LabelField("Audio Pool", $"{Audios.Count} / {Audios.Count + AudioPool.Count}");
+				int num = AudioInstance.Count;
+				int den = AudioInstance.Count + AudioPool.Count;
+				LabelField("Audio Pool", $"{num} / {den}");
 				Space();
 			}
 
 			LabelField("Audio Clip", EditorStyles.boldLabel);
 			SourcePath = TextField("Source Path", SourcePath);
 			BeginHorizontal();
-			PrefixLabel("Load Audio Clips");
-			if (Button("Clear")) ClearAudioClips();
-			if (Button("Load")) LoadAudioClips();
+			PrefixLabel("Load Audio Clip");
+			if (Button("Clear")) ClearAudioClip();
+			if (Button("Load")) LoadAudioClip();
 			EndHorizontal();
 			Space();
 
 			LabelField("Audio Clip Data", EditorStyles.boldLabel);
-			LabelField("Count", $"{ClipList.Count} / {AudioCount}");
-			BeginDisabledGroup();
-			int i = 0;
-			int max = Mathf.Min(8, ClipList.Count);
-			foreach (var audio in ClipList) {
-				if (max < ++i) break;
-				ObjectField(audio.ToString(), ClipData[(int)audio].AudioClip);
-			}
-			if (max < i) LabelField("...");
-			EndDisabledGroup();
+			LabelField("Audio Clip Count", $"{ClipList.Count} / {AudioCount}");
+			Page = BookField(ClipData, 5, Page, (match, index, value) => {
+				BeginDisabledGroup();
+				if (match) {
+					var text = ((Audio)index).ToString();
+					var name = Regex.Replace(text, @"(?<!^)(?=[A-Z])", " ");
+					ObjectField(name, value.AudioClip);
+					EnumField("State", value.State);
+				} else {
+					LabelField(" ");
+					LabelField(" ");
+				}
+				EndDisabledGroup();
+			});
 			Space();
 
 			End();
@@ -83,6 +88,9 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 
 
 	// Constants
+
+	const string MasterVolumeK = "MasterVolume";
+	const float MasterVolumeD = 1f;
 
 	const string MusicVolumeK = "MusicVolume";
 	const float MusicVolumeD = 1f;
@@ -104,7 +112,7 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	struct ClipEntry {
 		public AudioClip AudioClip;
 		public State State;
-		public float LastPlayTime;
+		public float EndTime;
 	}
 
 	const int TimeSliceCount = 30;
@@ -117,11 +125,12 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	[SerializeField] AudioMixer m_AudioMixer;
 	[SerializeField] AudioMixerGroup m_MusicGroup;
 	[SerializeField] AudioMixerGroup m_SoundFXGroup;
+	float? m_MasterVolume;
 	float? m_MusicVolume;
 	float? m_SoundFXVolume;
 
 	[SerializeField] AudioSource m_AudioTemplate;
-	Dictionary<uint, (AudioSource, Audio)> m_Audios = new();
+	Dictionary<uint, (Audio, AudioSource)> m_AudioInstance = new();
 	Stack<AudioSource> m_AudioPool = new();
 	List<uint> m_IDBuffer = new();
 	uint m_NextID;
@@ -149,6 +158,13 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		set => Instance.m_SoundFXGroup = value;
 	}
 
+	public static float MasterVolume {
+		get => Instance.m_MasterVolume ??= PlayerPrefs.GetFloat(MasterVolumeK, MasterVolumeD);
+		set {
+			PlayerPrefs.SetFloat(MasterVolumeK, (Instance.m_MasterVolume = value).Value);
+			AudioMixer?.SetFloat(MasterVolumeK, Mathf.Log10(Mathf.Max(0.00001f, value)) * 20f);
+		}
+	}
 	public static float MusicVolume {
 		get => Instance.m_MusicVolume ??= PlayerPrefs.GetFloat(MusicVolumeK, MusicVolumeD);
 		set {
@@ -170,11 +186,15 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		get => Instance.m_AudioTemplate;
 		set => Instance.m_AudioTemplate = value;
 	}
-	static Dictionary<uint, (AudioSource, Audio)> Audios => Instance.m_Audios;
-	static Stack<AudioSource> AudioPool => Instance.m_AudioPool;
-
-	static List<uint> IDBuffer => Instance.m_IDBuffer;
-
+	static Dictionary<uint, (Audio, AudioSource)> AudioInstance {
+		get => Instance.m_AudioInstance;
+	}
+	static Stack<AudioSource> AudioPool {
+		get => Instance.m_AudioPool;
+	}
+	static List<uint> IDBuffer {
+		get => Instance.m_IDBuffer;
+	}
 	static uint NextID {
 		get => Instance.m_NextID;
 		set => Instance.m_NextID = value;
@@ -190,7 +210,9 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		get => Instance.m_SourcePath;
 		set => Instance.m_SourcePath = value;
 	}
-	static List<Audio> ClipList => Instance.m_ClipList;
+	static List<Audio> ClipList {
+		get => Instance.m_ClipList;
+	}
 	static ClipEntry[] ClipData {
 		get => Instance.m_ClipData;
 		set => Instance.m_ClipData = value;
@@ -206,13 +228,13 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	// Data Methods
 
 	#if UNITY_EDITOR
-	static void ClearAudioClips() {
+	static void ClearAudioClip() {
 		ClipList.Clear();
 		ClipData = new ClipEntry[AudioCount];
 	}
 
-	static void LoadAudioClips() {
-		ClearAudioClips();
+	static void LoadAudioClip() {
+		ClearAudioClip();
 		foreach (var clip in LoadAssets<AudioClip>(SourcePath)) {
 			if (!Enum.TryParse(clip.name, out Audio audio)) continue;
 			ClipList.Add(audio);
@@ -222,18 +244,13 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 			};
 		}
 		ClipList.TrimExcess();
-
-		var message = string.Empty;
-		for (int i = 0; i < AudioCount; i++) if (!ClipData[i].AudioClip)
-			message += $"{(string.IsNullOrEmpty(message) ? string.Empty : ", ")}{(Audio)i}";
-		if (!string.IsNullOrEmpty(message)) Debug.Log($"Missing audio clips:\n{message}");
 	}
 
 	static T[] LoadAssets<T>(string path) where T : UnityEngine.Object {
 		var guids = AssetDatabase.FindAssets("t:" + typeof(T).Name, new[] { path });
 		var assets = new T[guids.Length];
 		for (int i = 0; i < guids.Length; i++) {
-			string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+			var assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
 			assets[i] = AssetDatabase.LoadAssetAtPath<T>(assetPath);
 		}
 		return assets;
@@ -245,9 +262,9 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	// Instance Methods
 
 	static (uint, AudioSource) GetOrCreateInstance(Audio audio) {
-		if (!AudioPool.TryPop(out var instance)) {
-			instance = Instantiate(AudioTemplate);
-		}
+		AudioSource instance;
+		while (AudioPool.TryPop(out instance) && instance == null);
+		if (instance == null) instance = Instantiate(AudioTemplate);
 		ref var data = ref ClipData[(int)audio];
 		if (data.AudioClip) {
 			instance.clip = data.AudioClip;
@@ -257,16 +274,16 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 			}
 		}
 		instance.gameObject.SetActive(true);
-		while (++NextID == default || Audios.ContainsKey(NextID));
-		Audios.Add(NextID, (instance, audio));
+		while (++NextID == default || AudioInstance.ContainsKey(NextID));
+		AudioInstance.Add(NextID, (audio, instance));
 		return (NextID, instance);
 	}
 
 	static void UpdateInstances() {
-		foreach (var (audioID, (instance, audio)) in Audios) {
+		foreach (var (audioID, (audio, instance)) in AudioInstance) {
 			if (instance) {
 				ref var data = ref ClipData[(int)audio];
-				if (instance.isPlaying) data.LastPlayTime = Time.time;
+				if (instance.isPlaying) data.EndTime = Time.time;
 				else {
 					var state = data.AudioClip.loadState;
 					if (state != AudioDataLoadState.Loading) IDBuffer.Add(audioID);
@@ -280,7 +297,7 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		int lastIndex = Mathf.Min(SliceIndex + TimeSliceCount, ClipList.Count);
 		for (; SliceIndex < lastIndex; SliceIndex++) {
 			ref var data = ref ClipData[(int)ClipList[SliceIndex]];
-			if (data.State == State.Loaded && UnloadThreshold <= Time.time - data.LastPlayTime) {
+			if (data.State == State.Loaded && UnloadThreshold <= Time.time - data.EndTime) {
 				data.State = State.Unloaded;
 				data.AudioClip.UnloadAudioData();
 			}
@@ -289,12 +306,8 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	}
 
 	static void RemoveInstance(uint audioID) {
-		var instance = Audios[audioID].Item1;
+		var (audio, instance) = AudioInstance[audioID];
 		if (instance) {
-			var transform_localPosition = AudioTemplate.transform.localPosition;
-			if (instance.transform.localPosition != transform_localPosition) {
-				instance.transform.localPosition = transform_localPosition;
-			}
 			var outputAudioMixerGroup = AudioTemplate.outputAudioMixerGroup;
 			if (instance.outputAudioMixerGroup != outputAudioMixerGroup) {
 				instance.outputAudioMixerGroup = outputAudioMixerGroup;
@@ -326,7 +339,7 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 			instance.gameObject.SetActive(false);
 			AudioPool.Push(instance);
 		}
-		Audios.Remove(audioID);
+		AudioInstance.Remove(audioID);
 	}
 
 
@@ -377,25 +390,25 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 		return audioID;
 	}
 
-	public static void StopAudio(uint audioID) {
-		if (Audios.TryGetValue(audioID, out var value)) {
-			var instance = value.Item1;
-			instance.Stop();
-			RemoveInstance(audioID);
-		}
-	}
-
 	public static void SetAudioPosition(uint audioID, Vector3 position) {
-		if (Audios.TryGetValue(audioID, out var value)) {
-			var instance = value.Item1;
+		if (AudioInstance.TryGetValue(audioID, out var value)) {
+			var (audio, instance) = value;
 			instance.transform.position = position;
 		}
 	}
 
 	public static void SetAudioVolume(uint audioID, float volume) {
-		if (Audios.TryGetValue(audioID, out var value)) {
-			var instance = value.Item1;
+		if (AudioInstance.TryGetValue(audioID, out var value)) {
+			var (audio, instance) = value;
 			instance.volume = volume;
+		}
+	}
+
+	public static void StopAudio(uint audioID) {
+		if (AudioInstance.TryGetValue(audioID, out var value)) {
+			var (audio, instance) = value;
+			instance.Stop();
+			RemoveInstance(audioID);
 		}
 	}
 
@@ -404,6 +417,7 @@ public sealed class AudioManager : MonoSingleton<AudioManager> {
 	// Lifecycle
 
 	void Start() {
+		_ = MasterVolume;
 		_ = MusicVolume;
 		_ = SoundFXVolume;
 	}

@@ -10,21 +10,25 @@ using UnityEditor;
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Dialogue Canvas
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Dialogue Screen
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[AddComponentMenu("UI/Dialogue Canvas")]
-public class DialogueCanvas : BaseCanvas {
+[AddComponentMenu("UI/Dialogue Screen")]
+public class DialogueScreen : ScreenBase {
 
 	// Editor
 
 	#if UNITY_EDITOR
-	[CustomEditor(typeof(DialogueCanvas))]
-	class DialogueCanvasEditor : EditorExtensions {
-		DialogueCanvas I => target as DialogueCanvas;
+	[CustomEditor(typeof(DialogueScreen))]
+	class DialogueScreenEditor : EditorExtensions {
+		DialogueScreen I => target as DialogueScreen;
 		public override void OnInspectorGUI() {
-			Begin("Dialogue Canvas");
+			Begin("Dialogue Screen");
+
+			LabelField("Selected", EditorStyles.boldLabel);
+			I.DefaultSelected = ObjectField("Default Selected", I.DefaultSelected);
+			Space();
 
 			LabelField("Speaker Name", EditorStyles.boldLabel);
 			I.NameTransform = ObjectField("Name Transform", I.NameTransform);
@@ -73,6 +77,12 @@ public class DialogueCanvas : BaseCanvas {
 
 
 	// Properties
+
+	public override bool IsPrimary => false;
+	public override bool IsOverlay => false;
+	public override BackgroundMode BackgroundMode => BackgroundMode.Scene;
+
+
 
 	RectTransform NameTransform {
 		get => m_NameTransform;
@@ -168,7 +178,7 @@ public class DialogueCanvas : BaseCanvas {
 			EnableInput = false;
 			onEnd?.Invoke(new MultimodalData { text = input });
 		});
-		UIManager.SelectedGameObject = InputField.gameObject;
+		UIManager.Selected = InputField;
 	}
 
 
@@ -269,7 +279,7 @@ public class DialogueCanvas : BaseCanvas {
 		} else if (EnableInput) {
 			TextDisplayTimer = 0f;
 		} else {
-			UIManager.PopOverlay();
+			//UIManager.PopOverlay();
 			TextIndex = 0;
 		}
 	}

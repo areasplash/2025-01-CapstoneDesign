@@ -7,26 +7,23 @@ using UnityEditor;
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Yejin
+// Shop Screen
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-public class Yejin : Actor {
+[AddComponentMenu("UI Screen/Shop Screen")]
+public sealed class ShopScreen : ScreenBase {
 
 	// Editor
 
 	#if UNITY_EDITOR
-	[CustomEditor(typeof(Yejin))]
-	class YejinEditor : EditorExtensions {
-		Yejin I => target as Yejin;
+	[CustomEditor(typeof(ShopScreen))]
+	class ShopScreenEditor : EditorExtensions {
+		ShopScreen I => target as ShopScreen;
 		public override void OnInspectorGUI() {
-			Begin("Yejin");
+			Begin();
 
-			LabelField("Animator", EditorStyles.boldLabel);
-			I.BodyAnimator    = ObjectField("Body Animator",    I.BodyAnimator);
-			I.EmotionAnimator = ObjectField("Emotion Animator", I.EmotionAnimator);
-			Space();
-			LabelField("Physics", EditorStyles.boldLabel);
-			I.Speed = FloatField("Speed", I.Speed);
+			LabelField("Selected", EditorStyles.boldLabel);
+			I.DefaultSelected = ObjectField("Default Selected", I.DefaultSelected);
 			Space();
 
 			End();
@@ -34,4 +31,11 @@ public class Yejin : Actor {
 	}
 	#endif
 
+
+
+	// Properties
+
+	public override bool IsPrimary => false;
+	public override bool IsOverlay => false;
+	public override BackgroundMode BackgroundMode => BackgroundMode.Scene;
 }

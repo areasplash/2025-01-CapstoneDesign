@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using System;
 
-public class InventoryUICanvas : BaseCanvas {
+public class InventoryUICanvas : ScreenBase {
     private int maxSlotNum = 80;
     [SerializeField] private Transform slotContainer;
     [SerializeField] private Transform tabContainer;

@@ -20,6 +20,7 @@ public enum KeyAction : byte {
 	Move,
 	Jump,
 	Interact,
+	Menu,
 
 	Point,
 	Click,
@@ -36,9 +37,9 @@ public enum KeyAction : byte {
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Input Manager
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [AddComponentMenu("Manager/Input Manager")]
 [RequireComponent(typeof(PlayerInput))]
@@ -51,18 +52,22 @@ public class InputManager : MonoSingleton<InputManager> {
 	class InputManagerEditor : EditorExtensions {
 		InputManager I => target as InputManager;
 		public override void OnInspectorGUI() {
-			Begin("Input Manager");
-			I.TrySetInstance();
+			Begin();
+
+			LabelField("Player Input", EditorStyles.boldLabel);
+			ObjectField("Player Input", PlayerInput);
+			InputActionAsset = ObjectField("Input Action Asset", InputActionAsset);
+			if (InputActionAsset == null) {
+				var message = string.Empty;
+				message += $"Input Action Asset is missing.\n";
+				message += $"Please assign a Input Action Asset to here.";
+				HelpBox(message, MessageType.Info);
+			}
+			Space();
 
 			LabelField("Web Cam", EditorStyles.boldLabel);
 			CaptureWebCam = Toggle("Capture Web Cam", CaptureWebCam);
 			if (CaptureWebCam) RawImage = ObjectField("Web Cam Image", RawImage);
-			Space();
-			LabelField("Debug", EditorStyles.boldLabel);
-			BeginDisabledGroup();
-			var actionMap = Application.isPlaying ? PlayerInput.currentActionMap.name : "None";
-			TextField("Action Map", actionMap);
-			EndDisabledGroup();
 			Space();
 
 			End();
@@ -82,6 +87,7 @@ public class InputManager : MonoSingleton<InputManager> {
 
 	PlayerInput m_PlayerInput;
 
+	bool m_IsPointerMode;
 	uint m_KeyNext;
 	uint m_KeyPrev;
 	Vector2 m_MoveDirection;
@@ -99,13 +105,21 @@ public class InputManager : MonoSingleton<InputManager> {
 
 	// Properties
 
-	static PlayerInput PlayerInput =>
-		Instance.m_PlayerInput || Instance.TryGetComponent(out Instance.m_PlayerInput) ?
-		Instance.m_PlayerInput : null;
+	static PlayerInput PlayerInput => !Instance.m_PlayerInput ?
+		Instance.m_PlayerInput = Instance.GetOwnComponent<PlayerInput>() :
+		Instance.m_PlayerInput;
 
-	static InputActionAsset InputActionAsset => PlayerInput.actions;
+	static InputActionAsset InputActionAsset {
+		get => PlayerInput.actions;
+		set => PlayerInput.actions = value;
+	}
 
 
+
+	public static bool IsPointerMode {
+		get         => Instance.m_IsPointerMode;
+		private set => Instance.m_IsPointerMode = value;
+	}
 
 	public static uint KeyNext {
 		get         => Instance.m_KeyNext;
@@ -166,26 +180,42 @@ public class InputManager : MonoSingleton<InputManager> {
 				if (!Enum.TryParse(inputAction.name, out KeyAction keyAction)) continue;
 
 				int index = (int)keyAction;
-				inputAction.performed += (KeyAction)index switch {
-					KeyAction.Move        => callback => MoveDirection = callback.ReadValue<Vector2>(),
-					KeyAction.Point       => callback => PointPosition = callback.ReadValue<Vector2>(),
-					KeyAction.ScrollWheel => callback => ScrollWheel   = callback.ReadValue<Vector2>(),
-					KeyAction.Navigate    => callback => Navigate      = callback.ReadValue<Vector2>(),
-					KeyAction.QuickSlot   => callback => {
-						var value = (int)callback.ReadValue<float>();
-						QuickSlotManager.Instance.SelectSlot(value - 1);
-						Debug.Log($"{value}");
-					},
-					_ => callback => _ = callback.action.IsPressed() switch {
+				inputAction.started += action => KeyNext |= 1u << index;
+				inputAction.performed += keyAction switch {
+					KeyAction.Move        => action => MoveDirection = action.ReadValue<Vector2>(),
+					KeyAction.Point       => action => PointPosition = action.ReadValue<Vector2>(),
+					KeyAction.ScrollWheel => action => ScrollWheel   = action.ReadValue<Vector2>(),
+					KeyAction.Navigate    => action => Navigate      = action.ReadValue<Vector2>(),
+					_ => action => _ = action.action.IsPressed() switch {
 						true  => KeyNext |=  (1u << index),
 						false => KeyNext &= ~(1u << index),
 					},
 				};
-				inputAction.started  += callback => KeyNext |=  (1u << index);
-				inputAction.canceled += callback => KeyNext &= ~(1u << index);
+				inputAction.canceled += keyAction switch {
+					KeyAction.Move        => action => MoveDirection = Vector2.zero,
+					KeyAction.Point       => action => PointPosition = Vector2.zero,
+					KeyAction.ScrollWheel => action => ScrollWheel   = Vector2.zero,
+					KeyAction.Navigate    => action => Navigate      = Vector2.zero,
+					_ => action => KeyNext &= ~(1u << index),
+				};
 			}
 		}
 		InputSystem.onBeforeUpdate += () => KeyPrev = KeyNext;
+		InputSystem.onActionChange += (obj, change) => {
+			if (change != InputActionChange.ActionPerformed) return;
+			var inputAction = obj as InputAction;
+			if (inputAction?.activeControl == null) return;
+			var device = inputAction.activeControl.device;
+			IsPointerMode = device is Pointer;
+		};
+	}
+
+	public static void SwitchActionMap(ActionMap actionMap) {
+		if (InputActionAsset == null) return;
+		PlayerInput.currentActionMap = InputActionAsset.FindActionMap(actionMap.ToString());
+		MoveDirection = PointPosition = ScrollWheel = Navigate = default;
+		KeyNext = KeyPrev = default;
+		MoveDirection = PointPosition = ScrollWheel = Navigate = default;
 	}
 
 	static bool GetKeyNext(KeyAction key) => (KeyNext & (1u << (int)key)) != 0u;
@@ -195,20 +225,15 @@ public class InputManager : MonoSingleton<InputManager> {
 	public static bool GetKeyDown(KeyAction key) => GetKeyNext(key) && !GetKeyPrev(key);
 	public static bool GetKeyUp(KeyAction key) => !GetKeyNext(key) && GetKeyPrev(key);
 
-	public static void SwitchActionMap(ActionMap actionMap) {
-		if (InputActionAsset == null) return;
-		PlayerInput.currentActionMap = InputActionAsset.FindActionMap(actionMap.ToString());
-		MoveDirection = PointPosition = ScrollWheel = Navigate = default;
-		KeyNext = KeyPrev = default;
-	}
-
 
 
 	// Lifecycle
 
-	void Start() => RegisterActionMap();
+	void Start() {
+		RegisterActionMap();
+	}
 
-	void Update() {
+	/*void Update() {
 		if (!CaptureWebCam) return;
 		float time = Time.realtimeSinceStartup;
 		if ((time + Time.unscaledDeltaTime) % WebCamUpdateInterval < time % WebCamUpdateInterval) {
@@ -236,5 +261,5 @@ public class InputManager : MonoSingleton<InputManager> {
             	});
 			}
 		}
-	}
+	}*/
 }
