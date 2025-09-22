@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8709772118661597303}
   - component: {fileID: 1483202281437934855}
+  - component: {fileID: 6353008803476204703}
   - component: {fileID: 3531684765807811266}
   m_Layer: 0
   m_Name: Tool
@@ -75,8 +76,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: -1493729409
-  m_SortingLayer: 2
-  m_SortingOrder: 1
+  m_SortingLayer: 3
+  m_SortingOrder: 0
   m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -88,6 +89,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!210 &6353008803476204703
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9047706636343391967}
+  m_Enabled: 1
+  m_SortingLayerID: -1591639659
+  m_SortingLayer: 2
+  m_SortingOrder: 1
+  m_SortAtRoot: 0
 --- !u!114 &3531684765807811266
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -100,4 +113,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7190013554512e04c92684ea5ff38b1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  handPosition: {x: -0.3, y: 0, z: 0}

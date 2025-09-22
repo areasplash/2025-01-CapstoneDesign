@@ -20,7 +20,7 @@ public class FarmPlotInteractable : MonoBehaviour, IInteractable
         Debug.Log("interact!");
         if (parentPlot.CurrentPlant == null) {
             SeedTool seed = (SeedTool)playerToolManager?.EquippedTool;
-            parentPlot.PlantSeed(PlantDataBase.Instance.GetPlantData(seed.GetPlantId()));
+            parentPlot.PlantSeed(PlantDatabase.Instance.GetPlantData(seed.GetPlantId()));
         }
         else if (parentPlot.CurrentPlant.IsHarvestable()) {
             // TODO 아이템 획득 로직 추가 필요

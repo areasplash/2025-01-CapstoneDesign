@@ -31,7 +31,7 @@ public class ToolManager : MonoBehaviour
         toolVisual = toolObject?.GetComponent<ToolVisual>();
 
         // TODO 테스트 코드 삭제
-        ItemBase testItem = new ToolItem(ItemDataBase.Instance.GetItemData("CarrotSeed"));
+        ItemBase testItem = new ToolItem(ItemDatabase.Instance.GetItemData("CarrotSeed"));
         testItem.Use();
         //EquipTool(ItemDataBase.Instance.GetItemData("CarrotSeed"));
         //equippedTool.Use();

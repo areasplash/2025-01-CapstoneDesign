@@ -56,14 +56,14 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start() {
         // TODO 테스트 코드
-        InventoryManager.Instance.AddItem(new ToolItem(ItemDataBase.Instance.GetItemData("CarrotSeed")));
-        InventoryManager.Instance.AddItem(new ToolItem(ItemDataBase.Instance.GetItemData("CarrotSeed")));
-        InventoryManager.Instance.AddItem(new ToolItem(ItemDataBase.Instance.GetItemData("CarrotSeed")));
-        InventoryManager.Instance.AddItem(new ToolItem(ItemDataBase.Instance.GetItemData("CarrotSeed")));
-        InventoryManager.Instance.AddItem(new ToolItem(ItemDataBase.Instance.GetItemData("CarrotSeed")));
-        InventoryManager.Instance.AddItem(new ToolItem(ItemDataBase.Instance.GetItemData("WaterCan")));
-        InventoryManager.Instance.AddItem(new ToolItem(ItemDataBase.Instance.GetItemData("WaterCan")));
-        InventoryManager.Instance.AddItem(new ToolItem(ItemDataBase.Instance.GetItemData("WaterCan")));
+        InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("CarrotSeed")));
+        InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("CarrotSeed")));
+        InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("CarrotSeed")));
+        InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("CarrotSeed")));
+        InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("CarrotSeed")));
+        InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("WaterCan")));
+        InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("WaterCan")));
+        InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("WaterCan")));
     }
 
     // Update is called once per frame
