@@ -296,7 +296,8 @@ public class GameScreen : ScreenBase {
 			var typePos = Vector3.Lerp(aScreenPos, bScreenPos, 0.5f) + new Vector3(0f, -50f, 0f);
 			InteractableTypeUGUI.rectTransform.position = typePos;
 			InteractableTypeUGUI.text = interactable.InteractionType switch {
-				InteractionType.Talk => "말하기",
+				InteractionType.Talk  => "말하기",
+				InteractionType.Trade => "거래하기",
 				_ => "상호작용",
 			};
 		} else {

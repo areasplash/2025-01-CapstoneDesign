@@ -18,6 +18,7 @@ public enum Screen {
 	Fade,
 	Game,
 	MainMenu,
+	MapEditor,
 	Menu,
 	Options,
 	Shop,
@@ -32,6 +33,7 @@ public static class ScreenExtensions {
 		Screen.Fade         => typeof(FadeScreen),
 		Screen.Game         => typeof(GameScreen),
 		Screen.MainMenu     => typeof(MainMenuScreen),
+		Screen.MapEditor    => typeof(MapEditorScreen),
 		Screen.Menu         => typeof(MenuScreen),
 		Screen.Options      => typeof(OptionsScreen),
 		Screen.Shop         => typeof(ShopScreen),
@@ -46,6 +48,7 @@ public static class ScreenExtensions {
 		_ when screenBase is FadeScreen         => Screen.Fade,
 		_ when screenBase is GameScreen         => Screen.Game,
 		_ when screenBase is MainMenuScreen     => Screen.MainMenu,
+		_ when screenBase is MapEditorScreen    => Screen.MapEditor,
 		_ when screenBase is MenuScreen         => Screen.Menu,
 		_ when screenBase is OptionsScreen      => Screen.Options,
 		_ when screenBase is ShopScreen         => Screen.Shop,
@@ -407,6 +410,23 @@ public class UIManager : MonoSingleton<UIManager> {
 
 	public static void ShowGemCollectMessage(string message) {
 		GameScreen.ShowGemCollectMessage(message);
+	}
+
+
+
+	// Shop Screen Methods
+
+	static ShopScreen ShopScreen {
+		get => (ShopScreen)ScreenBases[(int)Screen.Shop];
+	}
+
+	public static List<ItemEntry> ShopItemList {
+		get => ShopScreen.ItemList;
+		set => ShopScreen.ItemList = value;
+	}
+	public static List<FeatureEntry> ShopFeatureList {
+		get => ShopScreen.FeatureList;
+		set => ShopScreen.FeatureList = value;
 	}
 
 
