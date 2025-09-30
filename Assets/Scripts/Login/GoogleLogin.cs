@@ -6,8 +6,10 @@ using Unity.Services.Authentication;
 using Unity.Services.Authentication.PlayerAccounts;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using System.Text;
 
-public enum SignInFailure {
+public enum SignInFailure
+{
     UserCanceled,
     Timeout,
     Network,
@@ -17,14 +19,22 @@ public enum SignInFailure {
     Unknown
 }
 
-public class GoogleLogin : MonoBehaviour, IPointerClickHandler {
+[Serializable]
+public class PlayerData
+{
+    public string player_id;
+}
+
+public class GoogleLogin : MonoBehaviour, IPointerClickHandler
+{
     public event Action OnLoginSucceeded;
     public event Action<SignInFailure, string> OnLoginFailed;
 
     private int timeoutSeconds = 90;
     private bool isBusy;
 
-    async void Awake() {
+    async void Awake()
+    {
         await UnityServices.InitializeAsync();
 
         // UPA 브라우저 로그인 성공 시 콜백 등록
@@ -33,21 +43,30 @@ public class GoogleLogin : MonoBehaviour, IPointerClickHandler {
         OnLoginFailed += ShowErrorLog;
     }
 
-    private void Start() {
+    private void Start()
+    {
         // StartUpaSignIn();
     }
 
-    public void OnPointerClick(PointerEventData eventData) {
+    public void OnPointerClick(PointerEventData eventData)
+    {
         StartUpaSignIn();
     }
 
     // UPA 로그인 시작(구글/애플/이메일 등 선택 UI는 UPA가 제공)
-    public async void StartUpaSignIn() {
+
+    /*
+     * 서버 전송을 위한 기존 함수 수정
+     */
+    public async void StartUpaSignIn()
+    {
         if (isBusy) { return; }
         isBusy = true;
 
-        try {
-            if (PlayerAccountService.Instance.IsSignedIn) {
+        try
+        {
+            if (PlayerAccountService.Instance.IsSignedIn)
+            {
                 await SignInWithUnityAuth();      // 이미 UPA 인증됨 → UGS 마무리
                 return;
             }
@@ -56,81 +75,108 @@ public class GoogleLogin : MonoBehaviour, IPointerClickHandler {
             var upaTask = PlayerAccountService.Instance.StartSignInAsync();
             var completed = await Task.WhenAny(upaTask, Task.Delay(Timeout.Infinite, cts.Token)) == upaTask;
 
-            if (!completed) {
+            if (!completed)
+            {
                 OnLoginFailed?.Invoke(SignInFailure.Timeout, "로그인 대기 시간이 초과되었어요. 다시 시도해 주세요.");
                 return;
             }
 
             await upaTask;
         }
-        catch (Exception e) {
+        catch (Exception e)
+        {
             HandleUpaStartSignInError(e);
         }
-        finally {
+        finally
+        {
             isBusy = false;
         }
     }
 
-    
-    private async void OnUpaSignedIn() {
+
+    private async void OnUpaSignedIn()
+    {
         await SignInWithUnityAuth();
     }
 
-    private async Task SignInWithUnityAuth() {
-        try {
+    private async Task SignInWithUnityAuth()
+    {
+        try
+        {
             var accessToken = PlayerAccountService.Instance.AccessToken;
             await AuthenticationService.Instance.SignInWithUnityAsync(accessToken);
-            // AuthenticationService.Instance.PlayerId에 플레이어 아이디 들어가있음
-            Debug.Log("UGS 인증 성공. PlayerID = " + AuthenticationService.Instance.PlayerId);
+
+            string playerId = AuthenticationService.Instance.PlayerId;
+            Debug.Log("UGS 인증 성공. PlayerID = " + playerId);
+
+            //여기에서 서버로 전송
+            SendPlayerIdToServer(playerId);
+
+            // 필요하면 성공 이벤트도 발생 가능
+            OnLoginSucceeded?.Invoke();
         }
-        catch (System.Exception e) {
+        catch (System.Exception e)
+        {
             Debug.LogException(e);
+            OnLoginFailed?.Invoke(SignInFailure.Unknown, "인증에 실패했어요.");
         }
     }
 
-    private void HandleUpaStartSignInError(Exception e) {
+    private void HandleUpaStartSignInError(Exception e)
+    {
         var message = e.Message ?? string.Empty;
 
-        if (message.IndexOf("Cancel", StringComparison.OrdinalIgnoreCase) >= 0) {
+        if (message.IndexOf("Cancel", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
             OnLoginFailed?.Invoke(SignInFailure.UserCanceled, "로그인이 취소되었어요.");
         }
-        else if (message.IndexOf("network", StringComparison.OrdinalIgnoreCase) >= 0 || message.IndexOf("transport", StringComparison.OrdinalIgnoreCase) >= 0) {
+        else if (message.IndexOf("network", StringComparison.OrdinalIgnoreCase) >= 0 || message.IndexOf("transport", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
             OnLoginFailed?.Invoke(SignInFailure.Network, "네트워크 연결을 확인하고 다시 시도해 주세요.");
         }
-        else {
+        else
+        {
             OnLoginFailed?.Invoke(SignInFailure.Unknown, "로그인 창을 열지 못했어요. 다시 시도해 주세요.");
         }
 
         Debug.LogException(e);
     }
 
-    private (SignInFailure reason, string msg) MapAuthException(AuthenticationException ex) {
+    private (SignInFailure reason, string msg) MapAuthException(AuthenticationException ex)
+    {
         // 메시지 기반
         var m = ex.Message?.ToLowerInvariant() ?? string.Empty;
 
-        if (m.Contains("invalid") && m.Contains("token")) {
+        if (m.Contains("invalid") && m.Contains("token"))
+        {
             return (SignInFailure.InvalidCredentials, "로그인 토큰이 유효하지 않아요. 다시 로그인해 주세요.");
         }
-        if (m.Contains("link") && m.Contains("already")) {
+        if (m.Contains("link") && m.Contains("already"))
+        {
             return (SignInFailure.AlreadyLinked, "이미 다른 계정에 연결된 로그인 방식이에요.");
         }
-        if (m.Contains("configuration") || m.Contains("redirect") || m.Contains("client id") || m.Contains("401")) {
+        if (m.Contains("configuration") || m.Contains("redirect") || m.Contains("client id") || m.Contains("401"))
+        {
             return (SignInFailure.ProviderMisconfigured, "로그인 제공자 설정에 문제가 있어요(클라이언트ID/리디렉트).");
         }
 
         return (SignInFailure.Unknown, "인증 서버에서 요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.");
     }
 
-    private (SignInFailure reason, string msg) MapRequestFailed(RequestFailedException ex) {
+    private (SignInFailure reason, string msg) MapRequestFailed(RequestFailedException ex)
+    {
         var m = ex.Message?.ToLowerInvariant() ?? string.Empty;
 
-        if (m.Contains("cancel")) {
+        if (m.Contains("cancel"))
+        {
             return (SignInFailure.UserCanceled, "로그인이 취소되었어요.");
         }
-        if (m.Contains("network") || m.Contains("transport") || m.Contains("timeout")) {
+        if (m.Contains("network") || m.Contains("transport") || m.Contains("timeout"))
+        {
             return (SignInFailure.Network, "네트워크 연결을 확인하고 다시 시도해 주세요.");
         }
-        if (m.Contains("401") || m.Contains("unauthorized") || m.Contains("redirect") || m.Contains("client id")) {
+        if (m.Contains("401") || m.Contains("unauthorized") || m.Contains("redirect") || m.Contains("client id"))
+        {
             return (SignInFailure.ProviderMisconfigured, "로그인 제공자 설정에 문제가 있어요(클라이언트ID/리디렉트).");
         }
 
@@ -138,19 +184,57 @@ public class GoogleLogin : MonoBehaviour, IPointerClickHandler {
     }
 
     // 익명 로그인에서 UPA로 계정 승격 (링크)
-    public async Task LinkUpa() {
-        try {
+    public async Task LinkUpa()
+    {
+        try
+        {
             await AuthenticationService.Instance.LinkWithUnityAsync(
                 PlayerAccountService.Instance.AccessToken);
             Debug.Log("UPA 계정 링크 성공");
         }
-        catch (System.Exception e) {
+        catch (System.Exception e)
+        {
             Debug.LogException(e);
             OnLoginFailed?.Invoke(SignInFailure.Unknown, "계정 링크에 실패했어요. 다시 시도해 주세요.");
         }
     }
 
-    public void ShowErrorLog(SignInFailure reason, string msg) {
+    public void ShowErrorLog(SignInFailure reason, string msg)
+    {
         Debug.Log(msg);
+    }
+
+    /*
+     * 서버 전송을 위한 함수 추가
+     */
+
+    private async void SendPlayerIdToServer(string playerId)
+    {
+        //string serverUrl = "http://localhost:8000/login";
+        string serverUrl = "https://pauletta-frontierlike-muoi.ngrok-free.dev/login";//서버 url
+
+        PlayerData data = new PlayerData { player_id = playerId };
+        string jsonString = JsonUtility.ToJson(data);
+
+        using (UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequest.PostWwwForm(serverUrl, "POST"))
+        {
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonString);
+            request.uploadHandler = new UnityEngine.Networking.UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new UnityEngine.Networking.DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            var operation = request.SendWebRequest();
+            while (!operation.isDone)
+                await Task.Yield();
+
+            if (request.result != UnityEngine.Networking.UnityWebRequest.Result.Success)
+            {
+                Debug.LogError("서버 전송 실패: " + request.error);
+            }
+            else
+            {
+                Debug.Log("서버 전송 성공: " + request.downloadHandler.text);
+            }
+        }
     }
 }
