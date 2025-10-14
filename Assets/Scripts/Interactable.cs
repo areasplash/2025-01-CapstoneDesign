@@ -2,12 +2,11 @@ using UnityEngine;
 
 
 
-// ━
-
 public enum InteractionType {
 	Interact,
 	Talk,
 	Listen,
+	Trade,
 }
 
 
