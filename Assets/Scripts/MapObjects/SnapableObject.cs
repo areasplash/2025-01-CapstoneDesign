@@ -6,7 +6,12 @@ public interface ISnappable {
 
 public class SnapableObject : MonoBehaviour, ISnappable {
     public void SnapToGrid() {
-        transform.position = GridUtility.SnapToIsometricGrid(transform.position);
+        MapObject mapObject = GetComponent<MapObject>();
+        int size = 1;
+        if (mapObject != null) {
+            size = mapObject.Data.Size;
+        }
+        transform.position = GridUtility.SnapToIsometricGrid(transform.position, size);
     }
 
     private void OnEnable() {

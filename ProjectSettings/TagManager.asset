@@ -8,7 +8,7 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - ClickableObject
   - Water
   - UI
   - 
@@ -43,6 +43,9 @@ TagManager:
     locked: 0
   - name: Shadow
     uniqueID: 2999293179
+    locked: 0
+  - name: GridOverlay
+    uniqueID: 374168121
     locked: 0
   - name: Tool
     uniqueID: 2703327637

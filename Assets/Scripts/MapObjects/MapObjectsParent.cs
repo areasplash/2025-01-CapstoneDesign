@@ -4,7 +4,9 @@ public class MapObjectsParent : MonoBehaviour {
 
     public void SnapAllChildrenToGrid() {
         foreach (Transform child in transform) {
-            child.position = GridUtility.SnapToIsometricGrid(child.position);
+            if (child.TryGetComponent(out SnapableObject snapable)) {
+                snapable.SnapToGrid();
+            }
         }
     }
 

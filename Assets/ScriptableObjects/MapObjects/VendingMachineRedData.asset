@@ -19,7 +19,7 @@ MonoBehaviour:
   - {fileID: -2771492577325793620, guid: df09ca6ddc4f07646b7c09d1e949b630, type: 3}
   - {fileID: 1297985819512041171, guid: df09ca6ddc4f07646b7c09d1e949b630, type: 3}
   - {fileID: -5944575367698595952, guid: df09ca6ddc4f07646b7c09d1e949b630, type: 3}
-  LinkedItem: {fileID: 0}
+  LinkedItem: {fileID: 11400000, guid: 56837c6e1742bb5478523960c5b9753b, type: 2}
   UseSpriteCollider: 1
   AdditionalComponents: []
   IsRotatable: 1

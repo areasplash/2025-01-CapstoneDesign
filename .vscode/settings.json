@@ -66,5 +66,5 @@
     "explorer.fileNesting.patterns": {
         "*.sln": "*.csproj"
     },
-    "dotnet.defaultSolution": "2025-01-CapstoneDesign.sln"
+    "dotnet.defaultSolution": "Capstone.sln"
 }

@@ -6,6 +6,8 @@ public class ToolVisual : MonoBehaviour {
         Swing
     }
 
+    [SerializeField] private SpriteRenderer bodyRenderer;
+
     private SpriteRenderer spriteRenderer;
     private Vector3 handPosition = new Vector3(-0.3f, 0.1f, 0f);
 
@@ -32,13 +34,28 @@ public class ToolVisual : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         if (spriteRenderer != null) {
-            transform.localPosition = new Vector3(spriteRenderer.flipX ? -handPosition.x : handPosition.x, handPosition.y, handPosition.z);
+            float pivotYOffset = GetPivotYOffset();
+            transform.localPosition = new Vector3(
+                spriteRenderer.flipX ? -handPosition.x : handPosition.x,
+                handPosition.y - pivotYOffset,
+                handPosition.z
+            );
             SwingAnimation();
         }
     }
 
+    private float GetPivotYOffset() {
+        if (bodyRenderer == null || bodyRenderer.sprite == null) { return 0f; }
+
+        var sprite = bodyRenderer.sprite;
+        // pivot.y는 픽셀 단위
+        float pivotWorldY = sprite.pivot.y / sprite.pixelsPerUnit;
+
+        return pivotWorldY;
+    }
+
     private void SwingAnimation() {
-        if(!isSwinging) { return; }
+        if (!isSwinging) { return; }
         
         swingTimer += Time.deltaTime;
         float t = swingTimer / swingDuration;

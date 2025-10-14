@@ -1,7 +1,6 @@
 using UnityEngine;
 
-public abstract class ItemBase
-{
+public abstract class ItemBase {
     public ItemData ItemData { get; protected set; }
     public int Count { get; private set; } = 1;
 

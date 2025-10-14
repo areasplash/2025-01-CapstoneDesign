@@ -24,7 +24,7 @@ TextureImporter:
     heightScale: 0.25
     normalMapFilter: 0
     flipGreenChannel: 0
-  isReadable: 0
+  isReadable: 1
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
@@ -134,7 +134,16 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-    outline: []
+    outline:
+    - - {x: 15, y: -7}
+      - {x: 15, y: 12}
+      - {x: 12, y: 15}
+      - {x: -13, y: 15}
+      - {x: -15, y: 14}
+      - {x: -15, y: -11}
+      - {x: -14, y: -13}
+      - {x: -11, y: -14}
+      - {x: 8, y: -14}
     customData: 
     physicsShape:
     - - {x: -4, y: -4}

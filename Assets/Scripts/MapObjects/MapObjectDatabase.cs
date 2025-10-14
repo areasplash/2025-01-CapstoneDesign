@@ -32,7 +32,7 @@ public class MapObjectDatabase : MonoSingleton<MapObjectDatabase>, IRegisterable
     public void AddItem(MapObjectData data) {
         if (data == null || string.IsNullOrEmpty(data.ObjectId)) { return; }
         if (mapObjectDict.ContainsKey(data.ObjectId)) {
-            Debug.LogWarning($"이미 존재하는 식물: {data.ObjectId}");
+            Debug.LogWarning($"이미 존재하는 오브젝트: {data.ObjectId}");
             return;
         }
         mapObjectDatas.Add(data);

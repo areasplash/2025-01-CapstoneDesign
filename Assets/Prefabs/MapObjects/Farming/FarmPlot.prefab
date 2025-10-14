@@ -119,6 +119,7 @@ GameObject:
   - component: {fileID: 6429759734426515986}
   - component: {fileID: 8264612716470057990}
   - component: {fileID: 5955480903416083640}
+  - component: {fileID: -2419632658525619393}
   - component: {fileID: 2726625225134959933}
   m_Layer: 0
   m_Name: FarmPlot
@@ -220,6 +221,18 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 2166b3ec54d2af74995eb41f4f51d8ad, type: 3}
   plantPrefab: {fileID: 7506875585415890393, guid: dd538fa235db44246965a1c16b513bf4, type: 3}
   currentPlant: {fileID: 0}
+--- !u!114 &-2419632658525619393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7720048702660501658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48badc98d1888154fa97ae6df7fe88cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!60 &2726625225134959933
 PolygonCollider2D:
   m_ObjectHideFlags: 0

@@ -21,6 +21,10 @@ public class MapObjectData : ScriptableObject {
     public bool UseFlipX = false;
     public bool IsEditable = true;
 
+    [Header("Grid Footprint")]
+    public int Size = 1;
+    public bool[,] footprint;
+
     private void OnValidate() {
         // 인스펙터에서 새로 만들었을 때 기본값 설정
         if (string.IsNullOrEmpty(ObjectId)) {

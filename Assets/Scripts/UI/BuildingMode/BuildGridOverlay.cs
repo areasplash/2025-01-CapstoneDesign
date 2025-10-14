@@ -20,7 +20,7 @@ public class BuildGridOverlay : MonoBehaviour
 
     void Start() {
         if (autoBuildOnStart) { BuildOnce(); }
-        Show(false);
+        Show(true);
     }
 
     /// 한 번만 칸 채우기

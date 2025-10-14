@@ -10,8 +10,9 @@ public class LongPressDetector : MonoBehaviour, IPointerDownHandler, IPointerUpH
 
     private void Awake() {
         longPressable = GetComponent<ILongPressable>();
-        if (longPressable == null)
+        if (longPressable == null) {
             Debug.LogWarning($"{gameObject.name}에 ILongPressable 인터페이스 구현체가 없습니다.");
+        }
     }
 
     private void Update() {

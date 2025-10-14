@@ -175,6 +175,9 @@ public class InputManager : MonoSingleton<InputManager> {
 	static void RegisterActionMap() {
 		if (InputActionAsset == null) return;
 		foreach (var inputActionMap in InputActionAsset.actionMaps) {
+			
+			inputActionMap.Enable();
+
 			if (!Enum.TryParse(inputActionMap.name, out ActionMap actionMap)) continue;
 			foreach (var inputAction in inputActionMap.actions) {
 				if (!Enum.TryParse(inputAction.name, out KeyAction keyAction)) continue;
