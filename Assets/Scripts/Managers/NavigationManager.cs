@@ -9,9 +9,9 @@ using UnityEditor;
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Navigation Manager
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [AddComponentMenu("Manager/Navigation Manager")]
 [RequireComponent(typeof(NavMeshSurface))]
@@ -24,8 +24,7 @@ public sealed class NavigationManager : MonoSingleton<NavigationManager> {
 	class NavigationManagerEditor : EditorExtensions {
 		NavigationManager I => target as NavigationManager;
 		public override void OnInspectorGUI() {
-			Begin("Navigation Manager");
-			I.TrySetInstance();
+			Begin();
 
 			LabelField("Navigation", EditorStyles.boldLabel);
 			BeginHorizontal();
@@ -56,8 +55,9 @@ public sealed class NavigationManager : MonoSingleton<NavigationManager> {
 
 	// Properties
 
-	static NavMeshSurface[] Surfaces => Instance.GetComponents<NavMeshSurface>();
-
+	static NavMeshSurface[] Surfaces {
+		get => Instance.GetComponents<NavMeshSurface>();
+	}
 	static NavMeshPath Path {
 		get => Instance.m_Path;
 		set => Instance.m_Path = value;

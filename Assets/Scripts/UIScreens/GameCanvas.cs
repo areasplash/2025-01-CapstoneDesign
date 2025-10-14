@@ -10,22 +10,26 @@ using UnityEditor;
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Game Canvas
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Game Screen
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[AddComponentMenu("UI/Game Canvas")]
-public class GameCanvas : BaseCanvas {
+[AddComponentMenu("UI/Game Screen")]
+public class GameScreen : ScreenBase {
 
 	// Editor
 
 	#if UNITY_EDITOR
-	[CustomEditor(typeof(GameCanvas))]
-	class GameCanvasEditor : EditorExtensions {
-		GameCanvas I => target as GameCanvas;
+	[CustomEditor(typeof(GameScreen))]
+	class GameScreenEditor : EditorExtensions {
+		GameScreen I => target as GameScreen;
 		static bool foldout = false;
 		public override void OnInspectorGUI() {
-			Begin("Game Canvas");
+			Begin();
+
+			LabelField("Selected", EditorStyles.boldLabel);
+			I.DefaultSelected = ObjectField("Default Selected", I.DefaultSelected);
+			Space();
 
 			if (foldout = Foldout("Sprite", foldout)) {
 				PropertyField("NumPSprite");
@@ -100,6 +104,12 @@ public class GameCanvas : BaseCanvas {
 
 
 	// Properties
+
+	public override bool IsPrimary => true;
+	public override bool IsOverlay => false;
+	public override BackgroundMode BackgroundMode => BackgroundMode.Scene;
+
+
 
 	RectTransform InteractableTransform {
 		get => m_InteractableTransform;
@@ -220,11 +230,48 @@ public class GameCanvas : BaseCanvas {
 
 
 
+	public override void Show() {
+		base.Show();
+		if (GameManager.GameState == GameState.Paused) {
+			GameManager.GameState = GameState.Gameplay;
+		}
+	}
+
+	public override void Hide() {
+		base.Hide();
+		if (GameManager.GameState == GameState.Gameplay) {
+			GameManager.GameState = GameState.Paused;
+		}
+	}
+
+	public override void Back() {
+		UIManager.OpenScreen(Screen.Menu);
+	}
+
+
+
 	// Lifecycle
 
 	void Start() {
 		InteractableTransform.gameObject.SetActive(false);
 		MessageTransform.gameObject.SetActive(false);
+	}
+
+	protected override void Update() {
+		switch (UIManager.CurrentScreen) {
+			case Screen.Debug:
+			case Screen.Game: {
+				if (InputManager.GetKeyUp(KeyAction.Menu)) Back();
+				if (GameManager.GameState == GameState.Paused) {
+					GameManager.GameState = GameState.Gameplay;
+				}
+			} break;
+			default: {
+				if (GameManager.GameState == GameState.Gameplay) {
+					GameManager.GameState = GameState.Paused;
+				}
+			} break;
+		}
 	}
 
 	void LateUpdate() {
@@ -236,8 +283,8 @@ public class GameCanvas : BaseCanvas {
 			InteractableTransform.gameObject.SetActive(true);
 			var aWorldPos = GameManager.Player.transform.position;
 			var bWorldPos = gameObject.transform.position;
-			var aScreenPos = CameraManager.MainCamera.WorldToScreenPoint(aWorldPos);
-			var bScreenPos = CameraManager.MainCamera.WorldToScreenPoint(bWorldPos);
+			var aScreenPos = CameraManager.WorldToScreenPoint(aWorldPos);
+			var bScreenPos = CameraManager.WorldToScreenPoint(bWorldPos);
 			var namePos = bScreenPos + new Vector3(0f, 150f, 0f);
 			InteractableNameUGUI.rectTransform.position = namePos;
 			InteractableNameUGUI.text = gameObject.name switch {

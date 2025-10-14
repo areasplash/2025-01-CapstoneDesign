@@ -7,26 +7,23 @@ using UnityEditor;
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Yejin
+// Fade Screen
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-public class Yejin : Actor {
+[AddComponentMenu("UI Screen/Fade Screen")]
+public sealed class FadeScreen : ScreenBase {
 
 	// Editor
 
 	#if UNITY_EDITOR
-	[CustomEditor(typeof(Yejin))]
-	class YejinEditor : EditorExtensions {
-		Yejin I => target as Yejin;
+	[CustomEditor(typeof(FadeScreen))]
+	class FadeScreenEditor : EditorExtensions {
+		FadeScreen I => target as FadeScreen;
 		public override void OnInspectorGUI() {
-			Begin("Yejin");
+			Begin();
 
-			LabelField("Animator", EditorStyles.boldLabel);
-			I.BodyAnimator    = ObjectField("Body Animator",    I.BodyAnimator);
-			I.EmotionAnimator = ObjectField("Emotion Animator", I.EmotionAnimator);
-			Space();
-			LabelField("Physics", EditorStyles.boldLabel);
-			I.Speed = FloatField("Speed", I.Speed);
+			LabelField("Selected", EditorStyles.boldLabel);
+			I.DefaultSelected = ObjectField("Default Selected", I.DefaultSelected);
 			Space();
 
 			End();
@@ -34,4 +31,11 @@ public class Yejin : Actor {
 	}
 	#endif
 
+
+
+	// Properties
+
+	public override bool IsPrimary => false;
+	public override bool IsOverlay => false;
+	public override BackgroundMode BackgroundMode => BackgroundMode.Preserve;
 }

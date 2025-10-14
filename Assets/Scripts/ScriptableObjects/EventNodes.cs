@@ -1,27 +1,24 @@
 using UnityEngine;
 using UnityEngine.UIElements;
-using Object = UnityEngine.Object;
-using Random = UnityEngine.Random;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
+using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEditor.Experimental.GraphView;
-using static EditorVisualElement;
+using static ElementEditorExtensions;
 #endif
 
 
 
-// ━
-
 public enum PortType : byte {
 	Default,
 	Object,
-	MultimodalData,
+	DataID,
 }
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
@@ -31,33 +28,36 @@ public class NodeMenuAttribute : Attribute {
 }
 
 public static class ListExtensions {
-	public static void CopyFrom<T>(this List<T> a, List<T> b) {
-		a.Clear();
-		a.AddRange(b);
+	public static void CopyFrom<T>(this List<T> target, List<T> origin) {
+		target.Clear();
+		target.AddRange(origin);
 	}
 }
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Event Base
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [Serializable]
 public abstract class EventBase {
 
-	// Node
+	// Editor
 
 	#if UNITY_EDITOR
 	public abstract class EventNodeBase : Node {
+
 		public static List<string> Dropdown {
 			get {
-				var cache = TypeCache.GetTypesWithAttribute<NodeMenuAttribute>();
-				var types = cache.Where(type => typeof(EventBase).IsAssignableFrom(type));
-				var dropdown = types.Select(type => {
-					var attribute = type.GetCustomAttributes(typeof(NodeMenuAttribute), false);
-					return attribute.Cast<NodeMenuAttribute>().First().Path;
-				}).OrderBy(path => path).ToList();
+				var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+				var dropdown = assembly.GetTypes().Where(type => {
+					return typeof(EventBase).IsAssignableFrom(type);
+				}).Select(type => {
+					var attributes = type.GetCustomAttributes(typeof(NodeMenuAttribute), false);
+					var attribute = attributes.Cast<NodeMenuAttribute>().FirstOrDefault();
+					return new { Type = type, Attribute = attribute };
+				}).Where(x => x.Attribute != null).Select(x => x.Attribute.Path).ToList();
 				return dropdown;
 			}
 		}
@@ -71,9 +71,12 @@ public abstract class EventBase {
 			var type = Type.GetType(name);
 			title = Regex.Replace(name[..^5], "(?<=[a-z])(?=[A-Z])", " ");
 			target = Activator.CreateInstance(type) as EventBase;
-			target.node = this;
-			var gray = new Color(0.2f, 0.2f, 0.2f);
-			mainContainer.style.backgroundColor = gray;
+			target.Node = this;
+			var separator = new VisualElement();
+			separator.style.height = 1f;
+			separator.style.backgroundColor = new Color(0.14f, 0.14f, 0.14f);
+			mainContainer.style.backgroundColor = new Color(0.18f, 0.18f, 0.18f);
+			mainContainer.ElementAt(1).Insert(2, separator);
 		}
 
 
@@ -104,17 +107,17 @@ public abstract class EventBase {
 					port.portColor = new Color(0.0f, 0.8f, 1.0f);
 					port.portName = isInput ? "In" : "Out";
 				} break;
-				case PortType.MultimodalData: {
+				case PortType.DataID: {
 					var orientation = Orientation.Horizontal;
-					var capacity = Port.Capacity.Multi;
-					port = InstantiatePort(orientation, direction, capacity, null);
-					port.portColor = new Color(0.8f, 0.2f, 0.8f);
+					var capacity = isInput ? Port.Capacity.Single : Port.Capacity.Multi;
+					port = InstantiatePort(orientation, direction, capacity, typeof(uint));
+					port.portColor = new Color(0.3f, 0.3f, 0.6f);
 					port.portName = isInput ? "In" : "Out";
 				} break;
 			}
 			port.userData = type;
 			switch (isInput) {
-				case true:  inputContainer.Add(port);  break;
+				case true:  inputContainer.Add(port); break;
 				case false: outputContainer.Add(port); break;
 			}
 			return port;
@@ -140,38 +143,85 @@ public abstract class EventBase {
 	// Fields
 
 	#if UNITY_EDITOR
-	public string guid;
-	public EventNodeBase node;
-	public Vector2 position;
+	[SerializeField] string m_Guid;
+	[SerializeField] EventNodeBase m_Node;
+	[SerializeField] Vector2 m_Position;
 	#endif
 
-	[SerializeField] public List<Connection> prevs = new();
-	[SerializeField] public List<Connection> nexts = new();
+	[SerializeField] List<Connection> m_Prevs = new();
+	[SerializeField] List<Connection> m_Nexts = new();
+
+
+
+	// Properties
+
+	#if UNITY_EDITOR
+	public string Guid {
+		get => m_Guid;
+		set => m_Guid = value;
+	}
+	public EventNodeBase Node {
+		get => m_Node;
+		set => m_Node = value;
+	}
+	public Vector2 Position {
+		get => m_Position;
+		set => m_Position = value;
+	}
+	#endif
+
+	public List<Connection> Prevs {
+		get => m_Prevs;
+		set => m_Prevs = value;
+	}
+	public List<Connection> Nexts {
+		get => m_Nexts;
+		set => m_Nexts = value;
+	}
 
 
 
 	// Methods
 
-	public EventBase() => guid = Guid.NewGuid().ToString();
+	#if UNITY_EDITOR
+	public EventBase() {
+		Guid = System.Guid.NewGuid().ToString();
+	}
 
 	public virtual void CopyFrom(EventBase eventBase) {
-		guid = eventBase.guid;
-		position = eventBase.position;
-		prevs.CopyFrom(eventBase.prevs);
-		nexts.CopyFrom(eventBase.nexts);
+		Guid = eventBase.Guid;
+		Position = eventBase.Position;
+		Prevs.CopyFrom(eventBase.Prevs);
+		Nexts.CopyFrom(eventBase.Nexts);
 	}
+	#else
+	public virtual void CopyFrom(EventBase eventBase) {
+		Prevs.CopyFrom(eventBase.Prevs);
+		Nexts.CopyFrom(eventBase.Nexts);
+	}
+	#endif
 
 	public virtual void Start() { }
 	public virtual bool Update() => true;
 	public virtual void End() { }
 
-	public virtual void GetNext(List<EventBase> list) {
-		foreach (var next in nexts) if (next.oPortType == PortType.Default) {
+	public virtual void GetNexts(List<EventBase> list) {
+		foreach (var next in Nexts) if (next.oPortType == PortType.Default) {
 			if (next.oPort == 0) list.Add(next.eventBase);
 		}
 	}
-	public virtual void GetObjects(List<GameObject> list) { }
-	public virtual void GetMultimodalData(List<MultimodalData> list) { }
+
+	protected virtual void GetObjects(List<GameObject> list) {
+		foreach (var prev in Prevs) if (prev.oPortType == PortType.Object) {
+			prev.eventBase.GetObjects(list);
+		}
+	}
+
+	protected virtual void GetDataID(ref uint dataID) {
+		foreach (var prev in Prevs) if (prev.oPortType == PortType.DataID) {
+			prev.eventBase.GetDataID(ref dataID);
+		}
+	}
 
 
 
@@ -183,8 +233,8 @@ public abstract class EventBase {
 		while (stack.TryPop(out var eventBase)) {
 			if (queue.Contains(eventBase)) continue;
 			queue.Enqueue(eventBase);
-			foreach (var prev in eventBase.prevs) stack.Push(prev.eventBase);
-			foreach (var next in eventBase.nexts) stack.Push(next.eventBase);
+			foreach (var prev in eventBase.Prevs) stack.Push(prev.eventBase);
+			foreach (var next in eventBase.Nexts) stack.Push(next.eventBase);
 		}
 		return queue.ToList();
 	}
@@ -196,13 +246,13 @@ public abstract class EventBase {
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Entry
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 public sealed class EntryEvent : EventBase {
 
-	// Node
+	// Editor
 
 	#if UNITY_EDITOR
 	public sealed class EntryEventNode : EventNodeBase {
@@ -225,64 +275,14 @@ public sealed class EntryEvent : EventBase {
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Debug | Log
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[NodeMenu("Debug/Log")]
-public sealed class LogEvent : EventBase {
-
-	// Node
-
-	#if UNITY_EDITOR
-	public sealed class LogEventNode : EventNodeBase {
-		LogEvent I => target as LogEvent;
-
-		public LogEventNode() : base() {
-			mainContainer.style.width = Node1U;
-		}
-
-		public override void ConstructData() {
-			var message = TextField(I.message, value => I.message = value);
-			message.textEdition.placeholder = "Message";
-			message.multiline = true;
-			mainContainer.Add(message);
-		}
-	}
-	#endif
-
-
-
-	// Fields
-
-	public string message = string.Empty;
-
-
-
-	// Methods
-
-	public override void CopyFrom(EventBase eventBase) {
-		base.CopyFrom(eventBase);
-		if (eventBase is LogEvent logEvent) {
-			message = logEvent.message;
-		}
-	}
-
-	public override void End() {
-		Debug.Log(message);
-	}
-}
-
-
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Logic | Delay
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("Logic/Delay")]
 public sealed class DelayEvent : EventBase {
 
-	// Node
+	// Editor
 
 	#if UNITY_EDITOR
 	public sealed class DelayEventNode : EventNodeBase {
@@ -293,7 +293,7 @@ public sealed class DelayEvent : EventBase {
 		}
 
 		public override void ConstructData() {
-			var delay = FloatField(I.delay, value => I.delay = value);
+			var delay = FloatField(I.Delay, value => I.Delay = value);
 			mainContainer.Add(delay);
 		}
 	}
@@ -303,9 +303,23 @@ public sealed class DelayEvent : EventBase {
 
 	// Fields
 
-	public float delay = 0.1f;
+	[SerializeField] float m_Delay = 0.1f;
 
-	float time = 0f;
+	float m_Time = 0f;
+
+
+
+	// Properties
+
+	public float Delay {
+		get => m_Delay;
+		set => m_Delay = Mathf.Max(0f, value);
+	}
+
+	float Time {
+		get => m_Time;
+		set => m_Time = value;
+	}
 
 
 
@@ -314,29 +328,29 @@ public sealed class DelayEvent : EventBase {
 	public override void CopyFrom(EventBase eventBase) {
 		base.CopyFrom(eventBase);
 		if (eventBase is DelayEvent delayEvent) {
-			delay = delayEvent.delay;
+			Delay = delayEvent.Delay;
 		}
 	}
 
 	public override void Start() {
-		time = Time.time;
+		Time = UnityEngine.Time.time;
 	}
 
 	public override bool Update() {
-		return delay <= (Time.time - time);
+		return Delay <= (UnityEngine.Time.time - Time);
 	}
 }
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Logic | Once Then
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("Logic/Once Then")]
 public sealed class OnceThenEvent : EventBase {
 
-	// Node
+	// Editor
 
 	#if UNITY_EDITOR
 	public sealed class OnceThenEventNode : EventNodeBase {
@@ -360,31 +374,40 @@ public sealed class OnceThenEvent : EventBase {
 
 	// Fields
 
-	bool value = false;
+	bool m_Value;
+
+
+
+	// Properties
+
+	bool Value {
+		get => m_Value;
+		set => m_Value = value;
+	}
 
 
 
 	// Methods
 
-	public override void GetNext(List<EventBase> list) {
-		int index = !value ? 0 : 1;
-		foreach (var next in nexts) if (next.oPortType == PortType.Default) {
+	public override void GetNexts(List<EventBase> list) {
+		int index = !Value ? 0 : 1;
+		foreach (var next in Nexts) if (next.oPortType == PortType.Default) {
 			if (next.oPort == index) list.Add(next.eventBase);
 		}
-		value = true;
+		Value = true;
 	}
 }
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Logic | Repeat
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("Logic/Repeat")]
 public sealed class RepeatEvent : EventBase {
 
-	// Node
+	// Editor
 
 	#if UNITY_EDITOR
 	public sealed class RepeatEventNode : EventNodeBase {
@@ -395,7 +418,7 @@ public sealed class RepeatEvent : EventBase {
 		}
 
 		public override void ConstructData() {
-			var count = IntField(I.count, value => I.count = value);
+			var count = IntField(I.Count, value => I.Count = value);
 			mainContainer.Add(count);
 		}
 
@@ -413,9 +436,23 @@ public sealed class RepeatEvent : EventBase {
 
 	// Fields
 
-	public int count = 1;
+	[SerializeField] int m_Count = 1;
 
-	int value = 0;
+	int m_Value = 0;
+
+
+
+	// Properties
+
+	public int Count {
+		get => m_Count;
+		set => m_Count = Mathf.Max(1, value);
+	}
+
+	int Value {
+		get => m_Value;
+		set => m_Value = value;
+	}
 
 
 
@@ -424,17 +461,17 @@ public sealed class RepeatEvent : EventBase {
 	public override void CopyFrom(EventBase eventBase) {
 		base.CopyFrom(eventBase);
 		if (eventBase is RepeatEvent repeatEvent) {
-			count = repeatEvent.count;
+			Count = repeatEvent.Count;
 		}
 	}
 
 	public override void Start() {
-		value = (value <= count) ? value : 0;
+		Value = (Value <= Count) ? Value : 0;
 	}
 
-	public override void GetNext(List<EventBase> list) {
-		int index = (value++ < count) ? 0 : 1;
-		foreach (var next in nexts) if (next.oPortType == PortType.Default) {
+	public override void GetNexts(List<EventBase> list) {
+		int index = (Value++ < Count) ? 0 : 1;
+		foreach (var next in Nexts) if (next.oPortType == PortType.Default) {
 			if (next.oPort == index) list.Add(next.eventBase);
 		}
 	}
@@ -442,14 +479,14 @@ public sealed class RepeatEvent : EventBase {
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Logic | Randomize
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [NodeMenu("Logic/Randomize")]
 public sealed class RandomizeEvent : EventBase {
 
-	// Node
+	// Editor
 
 	#if UNITY_EDITOR
 	public sealed class RandomizeEventNode : EventNodeBase {
@@ -461,18 +498,18 @@ public sealed class RandomizeEvent : EventBase {
 
 		public override void ConstructData() {
 			var weights = new VisualElement();
-			for (int i = 0; i < I.weights.Count; i++) {
+			for (int i = 0; i < I.Weights.Count; i++) {
 				int index = i;
 				var element = new VisualElement();
 				element.style.flexDirection = FlexDirection.Row;
-				var weight = FloatField(I.weights[index], value => {
-					I.weights[index] = value;
+				var weight = FloatField(I.Weights[index], value => {
+					I.Weights[index] = value;
 					UpdateProbability();
 				});
 				weight.style.width = Node1U - 11f - 18f;
 				var remove = Button("-", () => {
-					I.weights.RemoveAt(index);
-					I.weights.TrimExcess();
+					I.Weights.RemoveAt(index);
+					I.Weights.TrimExcess();
 					mainContainer.Remove(weights);
 					ConstructData();
 					var port = outputContainer.ElementAt(index) as Port;
@@ -489,8 +526,8 @@ public sealed class RandomizeEvent : EventBase {
 				weights.Add(element);
 			}
 			var add = Button("Add", () => {
-				I.weights.Add(1f);
-				I.weights.TrimExcess();
+				I.Weights.Add(1f);
+				I.Weights.TrimExcess();
 				mainContainer.Remove(weights);
 				ConstructData();
 				CreatePort(Direction.Output);
@@ -502,7 +539,7 @@ public sealed class RandomizeEvent : EventBase {
 
 		public override void ConstructPort() {
 			CreatePort(Direction.Input);
-			foreach (var weight in I.weights) CreatePort(Direction.Output);
+			foreach (var weight in I.Weights) CreatePort(Direction.Output);
 			UpdateProbability();
 			RefreshExpandedState();
 			RefreshPorts();
@@ -510,11 +547,11 @@ public sealed class RandomizeEvent : EventBase {
 
 		void UpdateProbability() {
 			float sum = 0f;
-			foreach (float weight in I.weights) sum += weight;
+			foreach (float weight in I.Weights) sum += weight;
 			if (sum == 0f) sum = 1f;
 			var ports = outputContainer.Children().OfType<Port>().ToList();
 			for (int i = 0; i < ports.Count; i++) {
-				ports[i].portName = $"{(100f * I.weights[i] / sum).ToString("F1")}%";
+				ports[i].portName = $"{(100f * I.Weights[i] / sum).ToString("F1")}%";
 			}
 		}
 	}
@@ -524,7 +561,13 @@ public sealed class RandomizeEvent : EventBase {
 
 	// Fields
 
-	public List<float> weights = new() { 1f, 1f, };
+	[SerializeField] List<float> m_Weights = new() { 1f, 1f, };
+
+
+
+	// Properties
+
+	public List<float> Weights => m_Weights;
 
 
 
@@ -533,17 +576,17 @@ public sealed class RandomizeEvent : EventBase {
 	public override void CopyFrom(EventBase eventBase) {
 		base.CopyFrom(eventBase);
 		if (eventBase is RandomizeEvent randomizeEvent) {
-			weights.CopyFrom(randomizeEvent.weights);
+			Weights.CopyFrom(randomizeEvent.Weights);
 		}
 	}
 
-	public override void GetNext(List<EventBase> list) {
+	public override void GetNexts(List<EventBase> list) {
 		float sum = 0f;
-		foreach (float weight in weights) sum += weight;
+		foreach (float weight in Weights) sum += weight;
 		float random = Random.Range(0f, sum);
-		int index = weights.FindIndex(weight => (random -= weight) <= 0f);
-		if (index == -1) index = weights.Count - 1;
-		foreach (var next in nexts) if (next.oPortType == PortType.Default) {
+		int index = Weights.FindIndex(weight => (random -= weight) <= 0f);
+		if (index == -1) index = Weights.Count - 1;
+		foreach (var next in Nexts) if (next.oPortType == PortType.Default) {
 			if (next.oPort == index) list.Add(next.eventBase);
 		}
 	}
@@ -551,14 +594,14 @@ public sealed class RandomizeEvent : EventBase {
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// GameObject | Object
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Game Object | Object
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[NodeMenu("GameObject/Object")]
+[NodeMenu("Game Object/Object")]
 public sealed class ObjectEvent : EventBase {
 
-	// Node
+	// Editor
 
 	#if UNITY_EDITOR
 	public sealed class ObjectEventNode : EventNodeBase {
@@ -571,7 +614,7 @@ public sealed class ObjectEvent : EventBase {
 		}
 
 		public override void ConstructData() {
-			var instance = ObjectField(I.instance, value => I.instance = value);
+			var instance = ObjectField(I.Instance, value => I.Instance = value);
 			mainContainer.Add(instance);
 		}
 
@@ -587,7 +630,16 @@ public sealed class ObjectEvent : EventBase {
 
 	// Fields
 
-	public GameObject instance;
+	[SerializeField] GameObject m_Instance;
+
+
+
+	// Properties
+
+	public GameObject Instance {
+		get => m_Instance;
+		set => m_Instance = value;
+	}
 
 
 
@@ -596,25 +648,25 @@ public sealed class ObjectEvent : EventBase {
 	public override void CopyFrom(EventBase eventBase) {
 		base.CopyFrom(eventBase);
 		if (eventBase is ObjectEvent objectEvent) {
-			instance = objectEvent.instance;
+			Instance = objectEvent.Instance;
 		}
 	}
 
-	public override void GetObjects(List<GameObject> list) {
-		if (instance != null) list.Add(instance);
+	protected override void GetObjects(List<GameObject> list) {
+		if (Instance != null) list.Add(Instance);
 	}
 }
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// GameObject | Instantiate Object
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Game Object | Instantiate Object
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[NodeMenu("GameObject/Instantiate Object")]
+[NodeMenu("Game Object/Instantiate Object")]
 public sealed class InstantiateObjectEvent : EventBase {
 
-	// Node
+	// Editor
 
 	#if UNITY_EDITOR
 	public sealed class InstantiateObjectEventNode : EventNodeBase {
@@ -627,9 +679,9 @@ public sealed class InstantiateObjectEvent : EventBase {
 		}
 
 		public override void ConstructData() {
-			var prefab = ObjectField("Prefab", I.prefab, value => I.prefab = value);
-			var anchor = ObjectField("Anchor", I.anchor, value => I.anchor = value);
-			var offset = Vector3Field("Offset", I.offset, value => I.offset = value);
+			var prefab = ObjectField("Prefab", I.Prefab, value => I.Prefab = value);
+			var anchor = ObjectField("Anchor", I.Anchor, value => I.Anchor = value);
+			var offset = Vector3Field("Offset", I.Offset, value => I.Offset = value);
 			mainContainer.Add(prefab);
 			mainContainer.Add(anchor);
 			mainContainer.Add(offset);
@@ -649,11 +701,33 @@ public sealed class InstantiateObjectEvent : EventBase {
 
 	// Fields
 
-	public GameObject prefab;
-	public GameObject anchor;
-	public Vector3 offset;
+	[SerializeField] GameObject m_Prefab;
+	[SerializeField] GameObject m_Anchor;
+	[SerializeField] Vector3 m_Offset;
 
-	GameObject instance;
+	GameObject m_Instance;
+
+
+
+	// Properties
+
+	public GameObject Prefab {
+		get => m_Prefab;
+		set => m_Prefab = value;
+	}
+	public GameObject Anchor {
+		get => m_Anchor;
+		set => m_Anchor = value;
+	}
+	public Vector3 Offset {
+		get => m_Offset;
+		set => m_Offset = value;
+	}
+
+	GameObject Instance {
+		get => m_Instance;
+		set => m_Instance = value;
+	}
 
 
 
@@ -662,56 +736,51 @@ public sealed class InstantiateObjectEvent : EventBase {
 	public override void CopyFrom(EventBase eventBase) {
 		base.CopyFrom(eventBase);
 		if (eventBase is InstantiateObjectEvent instantiateObjectEvent) {
-			prefab = instantiateObjectEvent.prefab;
-			anchor = instantiateObjectEvent.anchor;
-			offset = instantiateObjectEvent.offset;
+			Prefab = instantiateObjectEvent.Prefab;
+			Anchor = instantiateObjectEvent.Anchor;
+			Offset = instantiateObjectEvent.Offset;
 		}
 	}
 
 	public override void Start() {
-		instance = null;
+		Instance = null;
 	}
 
 	public override void End() {
-		if (instance == null && prefab) {
-			var position = anchor ? anchor.transform.TransformPoint(offset) : offset;
-			var rotation = anchor ? anchor.transform.rotation : Quaternion.identity;
-			instance = Object.Instantiate(prefab, position, rotation);
+		if (Instance == null && Prefab) {
+			var position = Anchor ? Anchor.transform.TransformPoint(Offset) : Offset;
+			var rotation = Anchor ? Anchor.transform.rotation : Quaternion.identity;
+			Instance = Object.Instantiate(Prefab, position, rotation);
 		}
 	}
 
-	public override void GetObjects(List<GameObject> list) {
+	protected override void GetObjects(List<GameObject> list) {
 		End();
-		if (instance != null) list.Add(instance);
+		if (Instance != null) list.Add(Instance);
 	}
 
 
 
 	#if UNITY_EDITOR
-	public override void DrawGizmos() {
-		var position = anchor ? anchor.transform.TransformPoint(offset) : offset;
-		Gizmos.DrawIcon(position, "d_GameObject Icon", true, Gizmos.color);
-	}
-
 	public override void DrawHandles() {
-		var position = anchor ? anchor.transform.TransformPoint(offset) : offset;
+		var position = Anchor ? Anchor.transform.TransformPoint(Offset) : Offset;
 		var handle = Handles.PositionHandle(position, Quaternion.identity);
-		offset = anchor ? anchor.transform.InverseTransformPoint(handle) : handle;
-		if (node != null) node.Q<Vector3Field>().value = offset;
+		Offset = Anchor ? Anchor.transform.InverseTransformPoint(handle) : handle;
+		if (Node != null) Node.Q<Vector3Field>().value = Offset;
 	}
 	#endif
 }
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// GameObject | Destroy Object
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Game Object | Destroy Object
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[NodeMenu("GameObject/Destroy Object")]
+[NodeMenu("Game Object/Destroy Object")]
 public sealed class DestroyObjectEvent : EventBase {
 
-	// Node
+	// Editor
 
 	#if UNITY_EDITOR
 	public sealed class DestroyObjectEventNode : EventNodeBase {
@@ -737,29 +806,91 @@ public sealed class DestroyObjectEvent : EventBase {
 
 	// Fields
 
-	List<GameObject> list = new();
+	List<GameObject> m_List = new();
+
+
+
+	// Properties
+
+	List<GameObject> List => m_List;
 
 
 
 	// Methods
 
 	public override void End() {
-		foreach (var prev in prevs) if (prev.oPortType == PortType.Object) {
-			prev.eventBase.GetObjects(list);
-			foreach (var instance in list) Object.Destroy(instance);
-			list.Clear();
-		}
+		base.GetObjects(List);
+		foreach (var instance in List) Object.Destroy(instance);
+		List.Clear();
 	}
 }
 
 
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Debug | Log
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[NodeMenu("Debug/Log")]
+public sealed class LogEvent : EventBase {
+
+	// Editor
+
+	#if UNITY_EDITOR
+	public sealed class LogEventNode : EventNodeBase {
+		LogEvent I => target as LogEvent;
+
+		public LogEventNode() : base() {
+			mainContainer.style.width = Node1U;
+		}
+
+		public override void ConstructData() {
+			var message = TextField(I.Message, value => I.Message = value);
+			message.textEdition.placeholder = "Message";
+			message.multiline = true;
+			mainContainer.Add(message);
+		}
+	}
+	#endif
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	// Fields
+
+	[SerializeField] string m_Message = string.Empty;
+
+
+
+	// Properties
+
+	public string Message {
+		get => m_Message;
+		set => m_Message = value;
+	}
+
+
+
+	// Methods
+
+	public override void CopyFrom(EventBase eventBase) {
+		base.CopyFrom(eventBase);
+		if (eventBase is LogEvent logEvent) {
+			Message = logEvent.Message;
+		}
+	}
+
+	public override void End() {
+		Debug.Log(Message);
+	}
+}
+
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Multimodal | Validate
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+/*
 [NodeMenu("Multimodal/Validate Answer")]
 public class ValidateAnswerEvent : EventBase {
 
@@ -846,3 +977,4 @@ public class ValidateAnswerEvent : EventBase {
 		}
 	}
 }
+*/

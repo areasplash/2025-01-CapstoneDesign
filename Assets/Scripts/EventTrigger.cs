@@ -17,9 +17,9 @@ public enum TriggerType {
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Event Trigger
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [AddComponentMenu("Component/Event Trigger")]
 [RequireComponent(typeof(Collider2D))]
@@ -37,7 +37,7 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 			LabelField("Event", EditorStyles.boldLabel);
 			I.Event = ObjectField("Event Graph", I.Event);
 			if (I.Event == null && Button("Create Event Graph")) {
-				I.Event = CreateInstance<EventGraphSO>();
+				I.Event = CreateInstance<EventGraph>();
 			}
 			if (I.Event != null && Button("Open Event Graph")) {
 				I.Event.name = I.gameObject.name;
@@ -90,7 +90,7 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 
 	// Fields
 
-	[SerializeField] EventGraphSO m_Event;
+	[SerializeField] EventGraph m_Event;
 	[SerializeField] InteractionType m_InteractableType;
 	[SerializeField] TriggerType m_TriggerType;
 	[SerializeField] bool m_PlayerOnly = true;
@@ -104,7 +104,7 @@ public sealed class EventTrigger : MonoBehaviour, IInteractable {
 
 	// Properties
 
-	public EventGraphSO Event {
+	public EventGraph Event {
 		get => m_Event;
 		set => m_Event = value;
 	}

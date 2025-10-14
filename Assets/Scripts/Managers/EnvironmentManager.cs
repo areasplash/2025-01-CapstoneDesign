@@ -36,9 +36,9 @@ public enum Pattern {
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Environment Manager
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [AddComponentMenu("Manager/Environment Manager")]
 [RequireComponent(typeof(Light2D))]
@@ -52,8 +52,7 @@ public class EnvironmentManager : MonoSingleton<EnvironmentManager> {
 		static int Index = 0;
 		EnvironmentManager I => target as EnvironmentManager;
 		public override void OnInspectorGUI() {
-			Begin("Environment Manager");
-			I.TrySetInstance();
+			Begin();
 
 			LabelField("Main Light", EditorStyles.boldLabel);
 			BeginHorizontal();

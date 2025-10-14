@@ -26,9 +26,9 @@ public enum Compare : byte {
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Game Manager
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [AddComponentMenu("Manager/Game Manager")]
 public class GameManager : MonoSingleton<GameManager> {
@@ -40,8 +40,18 @@ public class GameManager : MonoSingleton<GameManager> {
 	class GameManagerEditor : EditorExtensions {
 		GameManager I => target as GameManager;
 		public override void OnInspectorGUI() {
-			Begin("Game Manager");
-			I.TrySetInstance();
+			Begin();
+
+			LabelField("Event Instance", EditorStyles.boldLabel);
+			LabelField("Event Template", "None (Event Graph SO)");
+			int num = EventInstance.Count;
+			int den = 0;
+			LabelField("Event Pool", $"{num} / {den}");
+			Space();
+
+			LabelField("Game Status", EditorStyles.boldLabel);
+			LabelField("Game State", $"{GameState}");
+			LabelField("Time Scale", $"{TimeScale:F2}");
 
 			LabelField("Game Data", EditorStyles.boldLabel);
 			DictionaryField("Int Value", IntValue, (list, index) => {
@@ -69,12 +79,6 @@ public class GameManager : MonoSingleton<GameManager> {
 			EndHorizontal();
 			Space();
 
-			LabelField("Debug", EditorStyles.boldLabel);
-			BeginDisabledGroup();
-			TextField("Game State", GameState.ToString());
-			EndDisabledGroup();
-			Space();
-
 			End();
 		}
 	}
@@ -94,17 +98,15 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	GameState m_GameState;
 	Player m_Player;
-	[SerializeField] int m_Gem;
-	public bool m_Negative = false;
+
+	Dictionary<uint, byte> m_EventInstance = new();
+	List<(uint, EventBase, float)> m_EventList = new();
+	List<EventBase> m_EventBuffer = new();
+	uint m_NextID;
 
 	[SerializeField] HashMap<string, int> m_IntValue = new();
 	[SerializeField] HashMap<string, float> m_FloatValue = new();
 	[SerializeField] HashMap<string, string> m_StringValue = new();
-
-	Dictionary<uint, byte> m_Events = new();
-	List<(uint, EventBase, float)> m_EventList = new();
-	List<EventBase> m_EventBuffer = new();
-	uint m_EventID;
 
 
 
@@ -129,11 +131,24 @@ public class GameManager : MonoSingleton<GameManager> {
 		set => Time.timeScale = Mathf.Clamp(value, 0f, 10f);
 	}
 
-	public static Player Player => Instance.m_Player ??= FindAnyObjectByType<Player>();
+	public static Player Player => !Instance.m_Player ?
+		Instance.m_Player = FindAnyObjectByType<Player>() :
+		Instance.m_Player;
 
-	public static int Gem {
-		get => Instance.m_Gem;
-		private set => Instance.m_Gem = value;
+
+
+	static Dictionary<uint, byte> EventInstance {
+		get => Instance.m_EventInstance;
+	}
+	static List<(uint, EventBase, float)> EventList {
+		get => Instance.m_EventList;
+	}
+	static List<EventBase> EventBuffer {
+		get => Instance.m_EventBuffer;
+	}
+	static uint NextID {
+		get => Instance.m_NextID;
+		set => Instance.m_NextID = value;
 	}
 
 
@@ -150,13 +165,71 @@ public class GameManager : MonoSingleton<GameManager> {
 
 
 
-	static Dictionary<uint, byte> Events => Instance.m_Events;
-	static List<(uint, EventBase, float)> EventList => Instance.m_EventList;
-	static List<EventBase> EventBuffer => Instance.m_EventBuffer;
+	// Instance Methods
 
-	static uint EventID {
-		get => Instance.m_EventID;
-		set => Instance.m_EventID = value;
+	static uint AddInstance(EventBase eventBase) {
+		if (eventBase == null) return default;
+		while (++NextID == default || EventInstance.ContainsKey(NextID));
+		EventInstance.Add(NextID, 1);
+		EventList.Add((NextID, eventBase, 0f));
+		return NextID;
+	}
+
+	static void RemoveInstances(uint id) {
+		byte numEvents = EventInstance[id];
+		EventInstance.Remove(id);
+		for (int i = EventList.Count; 0 < i--;) {
+			var (eventID, eventBase, startTime) = EventList[i];
+			if (eventID == id) {
+				EventList.RemoveAt(i);
+				if (--numEvents == 0) break;
+			}
+		}
+	}
+
+	static void UpdateInstances() {
+		if (GameState == GameState.Paused) return;
+		int i = 0;
+		while (i < EventList.Count) {
+			var (eventID, eventBase, startTime) = EventList[i];
+			if (startTime == 0f) {
+				eventBase.Start();
+				EventList[i] = (eventID, eventBase, Time.time);
+				continue;
+			}
+			if (eventBase.Update() == false) {
+				i++;
+				continue;
+			}
+			eventBase.End();
+			eventBase.GetNexts(EventBuffer);
+			int numNexts = EventBuffer.Count;
+			if (numNexts == 0) {
+				if (--EventInstance[eventID] == 0) EventInstance.Remove(eventID);
+				EventList.RemoveAt(i);
+			} else {
+				if (1 < numNexts) EventInstance[eventID] += (byte)(numNexts - 1);
+				EventList[i] = (eventID, EventBuffer[0], 0f);
+				for (int j = 1; j < numNexts; j++) EventList.Add((eventID, EventBuffer[j], 0f));
+				EventBuffer.Clear();
+			}
+		}
+	}
+
+
+
+	// Event Methods
+
+	public static uint PlayEvent(EventGraph eventGraph) {
+		return eventGraph == null ? default : AddInstance(eventGraph.Entry);
+	}
+
+	public static bool IsEventPlaying(uint eventID = default) {
+		return eventID == default ? 0 < EventInstance.Count : EventInstance.ContainsKey(eventID);
+	}
+
+	public static void StopEvent(uint eventID) {
+		if (EventInstance.ContainsKey(eventID)) RemoveInstances(eventID);
 	}
 
 
@@ -187,83 +260,7 @@ public class GameManager : MonoSingleton<GameManager> {
 		}
 	}
 
-
-
-	public static void CollectGem(int amount) {
-		Gem += amount;
-		UIManager.ShowGemCollectMessage("야호! {" + amount + "}마음 보석을 획득했어!");
-	}
-
-
-
-	// Instance Methods
-
-	static uint AddInstance(EventBase baseEvent) {
-		if (baseEvent == null) return default;
-		while (++EventID == default || Events.ContainsKey(EventID));
-		Events.Add(EventID, 1);
-		EventList.Add((EventID, baseEvent, default));
-		return EventID;
-	}
-
-	static void RemoveInstances(uint id) {
-		byte numEvents = Events[id];
-		Events.Remove(id);
-		for (int i = EventList.Count; 0 < i--;) {
-			if (EventList[i].Item1 == id) {
-				EventList.RemoveAt(i);
-				if (--numEvents == 0) break;
-			}
-		}
-	}
-
-	static void UpdateInstances() {
-		if (GameState == GameState.Paused) return;
-		int i = 0;
-		while (i < EventList.Count) {
-			var (id, eventBase, startTime) = EventList[i];
-			if (startTime == default) {
-				eventBase.Start();
-				EventList[i] = (id, eventBase, Time.time);
-				continue;
-			}
-			if (eventBase.Update() == false) {
-				i++;
-				continue;
-			}
-			eventBase.End();
-			eventBase.GetNext(EventBuffer);
-			int numNexts = EventBuffer.Count;
-			if (numNexts == 0) {
-				if (--Events[id] == 0) Events.Remove(id);
-				EventList.RemoveAt(i);
-			} else {
-				if (1 < numNexts) Events[id] += (byte)(numNexts - 1);
-				EventList[i] = (id, EventBuffer[0], default);
-				for (int j = 1; j < numNexts; j++) EventList.Add((id, EventBuffer[j], default));
-				EventBuffer.Clear();
-			}
-		}
-	}
-
-
-
-	// Event Methods
-
-	public static uint PlayEvent(EventGraphSO eventGraph) {
-		uint id = AddInstance(eventGraph?.Entry);
-		return id;
-	}
-
-	public static bool IsEventPlaying(uint id = default) {
-		return id == default ? 0 < Events.Count : Events.ContainsKey(id);
-	}
-
-	public static void StopEvent(uint id) {
-		if (Events.ContainsKey(id)) RemoveInstances(id);
-	}
-
-	public static void Quit() {
+	public static void QuitGame() {
 		#if UNITY_EDITOR
 		EditorApplication.isPlaying = false;
 		#else
@@ -277,8 +274,7 @@ public class GameManager : MonoSingleton<GameManager> {
 
 	void Start() {
 		GameState = GameState.Gameplay;
-		UIManager.Initialize();
-		UIManager.OpenGame();
+		UIManager.OpenScreen(Screen.Game);
 	}
 
 	void Update() {

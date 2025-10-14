@@ -11,19 +11,18 @@ using UnityEditor.UI;
 
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Editor Extensions Selectable
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Selectable Editor Extensions
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 #if UNITY_EDITOR
 [CanEditMultipleObjects]
-public class EditorExtensionsSelectable : SelectableEditor {
+public class SelectableEditorExtensions : SelectableEditor {
 
 	// Initialization Methods
 
-	public void Begin(string name = null) {
-		name ??= target.GetType().Name;
-		Undo.RecordObject(target, $"Change {name} Properties");
+	public void Begin() {
+		Undo.RecordObject(target, $"Change {target.GetType().Name} Properties");
 		serializedObject.Update();
 		EditorGUI.BeginChangeCheck();
 	}
