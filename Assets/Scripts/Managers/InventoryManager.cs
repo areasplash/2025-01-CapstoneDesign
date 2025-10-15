@@ -72,8 +72,8 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
         InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("WaterCan")));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("VendingMachineRedItem"), 5));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("VendingMachineRedItem"), 5));
-        InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("VendingMachineRedItem"), 5));
-        InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("WoodenRoundTableItem"), 2));
+        InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("GlassSquareTableItem"), 5));
+        InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("WoodenSquareTableItem"), 2));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("WoodenRoundTableItem"), 2));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("VendingMachineRedItem"), 5));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("WoodenRoundTableItem"), 2));

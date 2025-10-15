@@ -2420,7 +2420,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3392213569555554588, guid: c2cdbc0dd44fc4249b59e1c4bc9a3188, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3426934594242980811, guid: c2cdbc0dd44fc4249b59e1c4bc9a3188, type: 3}
       propertyPath: m_AnchorMax.x
@@ -3500,7 +3500,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2162833063406077690, guid: 1afc8b4342aa8e64d88514ed8e37f55e, type: 3}
       propertyPath: mapObjectDatas.Array.size
-      value: 3
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2162833063406077690, guid: 1afc8b4342aa8e64d88514ed8e37f55e, type: 3}
       propertyPath: 'mapObjectDatas.Array.data[0]'
@@ -3509,11 +3509,19 @@ PrefabInstance:
     - target: {fileID: 2162833063406077690, guid: 1afc8b4342aa8e64d88514ed8e37f55e, type: 3}
       propertyPath: 'mapObjectDatas.Array.data[1]'
       value: 
-      objectReference: {fileID: 11400000, guid: 26875635def03754396ab180b57b4f3e, type: 2}
+      objectReference: {fileID: 11400000, guid: 62dc8ab1b36632b46b33b6939ff07357, type: 2}
     - target: {fileID: 2162833063406077690, guid: 1afc8b4342aa8e64d88514ed8e37f55e, type: 3}
       propertyPath: 'mapObjectDatas.Array.data[2]'
       value: 
+      objectReference: {fileID: 11400000, guid: 26875635def03754396ab180b57b4f3e, type: 2}
+    - target: {fileID: 2162833063406077690, guid: 1afc8b4342aa8e64d88514ed8e37f55e, type: 3}
+      propertyPath: 'mapObjectDatas.Array.data[3]'
+      value: 
       objectReference: {fileID: 11400000, guid: f8be524f4c819104b95006e34b07874d, type: 2}
+    - target: {fileID: 2162833063406077690, guid: 1afc8b4342aa8e64d88514ed8e37f55e, type: 3}
+      propertyPath: 'mapObjectDatas.Array.data[4]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 26009424a5e6eb54ca0d6a481a3b9ef9, type: 2}
     - target: {fileID: 8362609403794867063, guid: 1afc8b4342aa8e64d88514ed8e37f55e, type: 3}
       propertyPath: m_Name
       value: MapObjectDatabase
@@ -11242,7 +11250,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7888490829628395998, guid: 78759822db36b1947bd99b6c07aa88b8, type: 3}
       propertyPath: itemDatas.Array.size
-      value: 5
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 7888490829628395998, guid: 78759822db36b1947bd99b6c07aa88b8, type: 3}
       propertyPath: 'itemDatas.Array.data[0]'
@@ -11251,19 +11259,27 @@ PrefabInstance:
     - target: {fileID: 7888490829628395998, guid: 78759822db36b1947bd99b6c07aa88b8, type: 3}
       propertyPath: 'itemDatas.Array.data[1]'
       value: 
-      objectReference: {fileID: 11400000, guid: 62923f2eba249a24fb8fbfc662717c41, type: 2}
+      objectReference: {fileID: 11400000, guid: 1d280a9c92362a04f97979da1ad91d04, type: 2}
     - target: {fileID: 7888490829628395998, guid: 78759822db36b1947bd99b6c07aa88b8, type: 3}
       propertyPath: 'itemDatas.Array.data[2]'
       value: 
-      objectReference: {fileID: 11400000, guid: 6ecbc1e0686de3e4e8b0ceb5521be2c7, type: 2}
+      objectReference: {fileID: 11400000, guid: 62923f2eba249a24fb8fbfc662717c41, type: 2}
     - target: {fileID: 7888490829628395998, guid: 78759822db36b1947bd99b6c07aa88b8, type: 3}
       propertyPath: 'itemDatas.Array.data[3]'
       value: 
-      objectReference: {fileID: 11400000, guid: 56837c6e1742bb5478523960c5b9753b, type: 2}
+      objectReference: {fileID: 11400000, guid: 6ecbc1e0686de3e4e8b0ceb5521be2c7, type: 2}
     - target: {fileID: 7888490829628395998, guid: 78759822db36b1947bd99b6c07aa88b8, type: 3}
       propertyPath: 'itemDatas.Array.data[4]'
       value: 
+      objectReference: {fileID: 11400000, guid: 56837c6e1742bb5478523960c5b9753b, type: 2}
+    - target: {fileID: 7888490829628395998, guid: 78759822db36b1947bd99b6c07aa88b8, type: 3}
+      propertyPath: 'itemDatas.Array.data[5]'
+      value: 
       objectReference: {fileID: 11400000, guid: 123ab63b8572b734e925c36d313d2ecf, type: 2}
+    - target: {fileID: 7888490829628395998, guid: 78759822db36b1947bd99b6c07aa88b8, type: 3}
+      propertyPath: 'itemDatas.Array.data[6]'
+      value: 
+      objectReference: {fileID: 11400000, guid: a14b556a899f22a4cb1d8c65090a67cd, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
