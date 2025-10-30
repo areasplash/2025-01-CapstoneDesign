@@ -279,12 +279,10 @@ public class DialogueScreen : ScreenBase {
 		} else if (EnableInput) {
 			TextDisplayTimer = 0f;
 		} else {
-			//UIManager.PopOverlay();
+			UIManager.Back();
 			TextIndex = 0;
 		}
 	}
-
-	public override void Back() { }
 
 
 

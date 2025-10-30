@@ -63,6 +63,8 @@ public class InputManager : MonoSingleton<InputManager> {
 				message += $"Please assign a Input Action Asset to here.";
 				HelpBox(message, MessageType.Info);
 			}
+			var currentActionMap = PlayerInput.currentActionMap?.name ?? "None";
+			LabelField("Current Action Map", currentActionMap);
 			Space();
 
 			LabelField("Web Cam", EditorStyles.boldLabel);
