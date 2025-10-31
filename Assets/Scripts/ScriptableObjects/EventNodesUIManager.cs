@@ -13,7 +13,6 @@ using static ElementEditorExtensions;
 
 
 
-/*
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // UI Manager | Dialogue
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -190,10 +189,10 @@ public class BranchEvent : EventBase {
 		}
 	}
 
-	public override void GetNext(List<EventBase> list) {
+	public override void GetNexts(List<EventBase> list) {
 		// Get Index from UI Manager, User Selection
 		int index = 0;
-		foreach (var next in nexts) if (next.oPortType == PortType.Default) {
+		foreach (var next in Nexts) if (next.oPortType == PortType.Default) {
 			if (next.oPort == index) list.Add(next.eventBase);
 		}
 	}
@@ -249,8 +248,7 @@ public class DialogueInputEvent : EventBase {
 		return end;
 	}
 
-	public override void GetMultimodalData(List<MultimodalData> list) {
+	protected override void GetMultimodalData(List<MultimodalData> list) {
 		list.Add(data);
 	}
 }
-*/
