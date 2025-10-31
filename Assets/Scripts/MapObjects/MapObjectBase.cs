@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 
 public class MapObjectBase : MonoBehaviour {
     
@@ -15,11 +16,24 @@ public class MapObjectBase : MonoBehaviour {
     protected int rotationIndex = 0;
     public int RotationIndex => rotationIndex;
 
+    protected bool isInitialized = false;
+    public bool IsInitialized => isInitialized;
+
     protected void OnEnable() {
         Init();
-        snapableObject.SnapToGrid();
+        SnapAfterInit().Forget();
+    }
+
+    private async UniTaskVoid SnapAfterInit() {
+        await UniTask.WaitUntil(() => isInitialized);
         snapableObject.SnapToGrid();
     }
+
+    private void OnDisable() {
+        isInitialized = false;
+    }
+
+
 
     protected void Update() {
         
@@ -32,13 +46,12 @@ public class MapObjectBase : MonoBehaviour {
 
         if (data != null) {
             // 스프라이트 적용
-            if (data.Sprites != null && data.Sprites.Count > 0) {
-                spriteRenderer.sprite = data.Sprites[rotationIndex];
-            }
             ApplyRotation();
 
             // 콜라이더 적용
             ApplyCollider();
+
+            isInitialized = true;
         }
     }
 
@@ -62,6 +75,12 @@ public class MapObjectBase : MonoBehaviour {
             for (int i = 0; i < shapeCount; i++) {
                 path.Clear();
                 sprite.GetPhysicsShape(i, path);
+
+                if (spriteRenderer.flipX) {
+                    for (int j = 0; j < path.Count; j++) {
+                        path[j] = new Vector2(-path[j].x, path[j].y);
+                    }
+                }
                 collider.SetPath(i, path);
             }
         }
@@ -90,8 +109,14 @@ public class MapObjectBase : MonoBehaviour {
                 spriteRenderer.sprite = data.Sprites[0];
                 spriteRenderer.flipX = (rotationIndex % 2 == 1);
             }
-            ApplyCollider();
         }
+        else {
+            // 회전 불가일 경우 기본 이미지 적용
+            if (data.Sprites != null && data.Sprites.Count > 0) {
+                spriteRenderer.sprite = data.Sprites[0];
+            }
+        }
+        ApplyCollider();
     }
 
     public void SetRotationIndex(int index) {

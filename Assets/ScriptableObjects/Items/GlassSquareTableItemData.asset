@@ -15,9 +15,9 @@ MonoBehaviour:
   itemId: GlassSquareTableItem
   itemName: "\uC720\uB9AC \uC0AC\uAC01 \uD14C\uC774\uBE14"
   itemType: 5
-  isStackable: 0
+  isStackable: 1
   itemIconSprite: {fileID: 21300000, guid: 02da236e6fae3f945aac91ff109b10a2, type: 3}
   isTool: 0
-  itemClassName: 
+  itemClassName: MapObjectItem
   toolClassName: 
   holdingSprite: {fileID: 0}

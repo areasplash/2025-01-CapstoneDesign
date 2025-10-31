@@ -115,6 +115,7 @@ public class GameManager : MonoSingleton<GameManager> {
 	public static GameState GameState {
 		get => Instance.m_GameState;
 		set {
+			/*
 			if (Instance.m_GameState != value) {
 				Instance.m_GameState = value;
 				InputManager.SwitchActionMap(value switch {
@@ -124,6 +125,10 @@ public class GameManager : MonoSingleton<GameManager> {
 					_ => default,
 				});
 			}
+			*/
+			if (Instance.m_GameState == value) return;
+			var prev = Instance.m_GameState;
+			Instance.m_GameState = value;
 		}
 	}
 	public static float TimeScale {

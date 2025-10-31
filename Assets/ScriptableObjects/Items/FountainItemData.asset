@@ -15,9 +15,9 @@ MonoBehaviour:
   itemId: FountainItem
   itemName: "\uBD84\uC218"
   itemType: 5
-  isStackable: 0
+  isStackable: 1
   itemIconSprite: {fileID: 21300000, guid: a77a4969c26876242a6505174001b35d, type: 3}
   isTool: 0
-  itemClassName: 
+  itemClassName: MapObjectItem
   toolClassName: 
   holdingSprite: {fileID: 0}

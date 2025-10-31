@@ -18,10 +18,12 @@ public enum Screen {
 	Fade,
 	Game,
 	MainMenu,
-	MapEditor,
+	BuildingMode,
 	Menu,
 	Options,
 	Shop,
+	FadeLoading,
+	Inventory,
 }
 
 public static class ScreenExtensions {
@@ -33,10 +35,12 @@ public static class ScreenExtensions {
 		Screen.Fade         => typeof(FadeScreen),
 		Screen.Game         => typeof(GameScreen),
 		Screen.MainMenu     => typeof(MainMenuScreen),
-		Screen.MapEditor    => typeof(MapEditorScreen),
+		Screen.BuildingMode => typeof(BuildingModeScreen),
 		Screen.Menu         => typeof(MenuScreen),
 		Screen.Options      => typeof(OptionsScreen),
 		Screen.Shop         => typeof(ShopScreen),
+		Screen.FadeLoading  => typeof(FadeLoadingScreen),
+		Screen.Inventory    => typeof(InventoryUICanvas),
 		_ => default,
 	};
 
@@ -48,10 +52,12 @@ public static class ScreenExtensions {
 		_ when screenBase is FadeScreen         => Screen.Fade,
 		_ when screenBase is GameScreen         => Screen.Game,
 		_ when screenBase is MainMenuScreen     => Screen.MainMenu,
-		_ when screenBase is MapEditorScreen    => Screen.MapEditor,
+		_ when screenBase is BuildingModeScreen    => Screen.BuildingMode,
 		_ when screenBase is MenuScreen         => Screen.Menu,
 		_ when screenBase is OptionsScreen      => Screen.Options,
 		_ when screenBase is ShopScreen         => Screen.Shop,
+		_ when screenBase is FadeLoadingScreen  => Screen.FadeLoading,
+		_ when screenBase is InventoryUICanvas  => Screen.Inventory,
 		_ => default,
 	};
 }
@@ -207,6 +213,10 @@ public class UIManager : MonoSingleton<UIManager> {
 		get => ScreenStack.TryPeek(out var overlay) ? overlay.ToScreen() : null;
 	}
 
+	public static ScreenBase CurrentScreenBase {
+		get => ScreenStack.TryPeek(out var overlay) ? overlay : null;
+	}
+
 
 
 	static GameObject SelectedGameObject {
@@ -293,11 +303,11 @@ public class UIManager : MonoSingleton<UIManager> {
 
 
 
-	public static void OpenScreen(Screen screen) {
-		OpenScreen(ScreenBases[(int)screen]);
+	public static ScreenBase OpenScreen(Screen screen) {
+		return OpenScreen(ScreenBases[(int)screen]);
 	}
 
-	public static void OpenScreen(ScreenBase screenBase) {
+	public static ScreenBase OpenScreen(ScreenBase screenBase) {
 		if (screenBase.IsPrimary) {
 			while (ScreenStack.TryPop(out var screen8ase)) {
 				screen8ase.Hide();
@@ -308,6 +318,8 @@ public class UIManager : MonoSingleton<UIManager> {
 		ScreenStack.Push(screenBase);
 		UpdateScreenBackground();
 		screenBase.Show();
+		ApplyInputPolicyFromStack();
+		return screenBase;
 	}
 
 	public static void CloseScreen(ScreenBase screenBase) {
@@ -318,6 +330,7 @@ public class UIManager : MonoSingleton<UIManager> {
 			UpdateScreenBackground();
 			screen8ase.Show();
 		}
+		ApplyInputPolicyFromStack();
 	}
 
 	public static void Back() {
@@ -325,6 +338,25 @@ public class UIManager : MonoSingleton<UIManager> {
 			screenBase.Back();
 		}
 	}
+
+    public static InputPolicy GetEffectiveInputPolicy() {
+        // UIOnly가 하나라도 있으면 UIOnly
+		// Both가 하나라도 있으면 Both
+		// 아니면 PlayerOnly
+        var policy = InputPolicy.PlayerOnly;
+
+        foreach (var s in ScreenStack) {
+            if (s == null) continue;
+            if (s.InputPolicy == InputPolicy.UIOnly) return InputPolicy.UIOnly;
+            if (s.InputPolicy == InputPolicy.Both)  policy = InputPolicy.Both;
+        }
+        return policy;
+    }
+
+    public static void ApplyInputPolicyFromStack() {
+        var policy = GetEffectiveInputPolicy();
+        InputManager.ApplyInputPolicy(policy);
+    }
 
 
 
@@ -342,10 +374,42 @@ public class UIManager : MonoSingleton<UIManager> {
 		get => AlertScreen.CloseTextValue;
 		set => AlertScreen.CloseTextValue = value;
 	}
+	public static string AlertTitle {
+		get => AlertScreen.TitleTextValue;
+		set => AlertScreen.TitleTextValue = value;
+	}
 
 	public static Action OnAlertClosed {
 		get => AlertScreen.OnClosed;
 		set => AlertScreen.OnClosed = value;
+	}
+
+	public static void ShowAlert(string content, string closeText = "확인", string titleText = "알림", Action onClosed = null) {
+		// 내용/버튼 텍스트 설정
+		AlertContent = content ?? string.Empty;
+		if (!string.IsNullOrEmpty(closeText)) { 
+			AlertClose = closeText;
+		}
+		if (!string.IsNullOrEmpty(titleText)) { 
+			AlertTitle = titleText;
+		}
+
+		// 이전 핸들러 덮어쓰기
+		OnAlertClosed = null;
+		if (onClosed != null) {
+			OnAlertClosed += onClosed;
+		}
+
+		// 화면 열기
+		OpenScreen(Screen.Alert);
+	}
+
+	public static void CloseAlert() {
+		// 열린 상태라면 닫기
+		var alert = (AlertScreen)ScreenBases[(int)Screen.Alert];
+		if (alert && alert.gameObject.activeSelf) {
+			CloseScreen(alert);
+		}
 	}
 
 

@@ -53,6 +53,12 @@ public class QuickSlotManager : MonoSingleton<QuickSlotManager>
         if (item is ToolItem toolItem) {
             toolItem.Use();
         }
+        if (item is MapObjectItem mapObjectItem) {
+            // 빌딩모드 돌입
+            Debug.Log("MapObject!");
+            UIManager.OpenScreen(Screen.BuildingMode);
+        }
+        
     }
 
     public void UseCurrentItem() {

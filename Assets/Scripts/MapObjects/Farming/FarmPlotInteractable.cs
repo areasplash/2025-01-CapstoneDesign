@@ -9,7 +9,7 @@ public class FarmPlotInteractable : MonoBehaviour, IInteractable
     public InteractionType InteractionType => InteractionType.Interact;
     public bool IsInteractable {
         get {
-            if (parentPlot.CurrentPlant == null) { 
+            if (parentPlot.CurrentPlant == null) {
                 return playerToolManager?.EquippedTool is SeedTool;
             }
             return parentPlot.CurrentPlant.IsHarvestable();

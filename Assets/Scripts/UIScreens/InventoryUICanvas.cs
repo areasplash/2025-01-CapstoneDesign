@@ -27,6 +27,11 @@ public class InventoryUICanvas : ScreenBase {
     private List<InventoryTabUI> tabUIs = new();
     private List<QuickSlotRegisterUI> quiclSlotUIs = new();
 
+    public virtual bool IsPrimary => true;
+	public virtual bool IsOverlay => false;
+	public virtual BackgroundMode BackgroundMode => BackgroundMode.Preserve;
+
+
     private void Awake() {
         tabIcons = new Dictionary<ItemType, Sprite>();
         foreach (var entry in tabIconsList) {
@@ -86,13 +91,13 @@ public class InventoryUICanvas : ScreenBase {
 
     private void OnEnable() {
         InventoryManager.Instance.OnInventoryChanged += HandleInventoryChanged;
-        quickSlotUI.gameObject.SetActive(false);
+        //quickSlotUI.gameObject.SetActive(false);
         HandleInventoryChanged();
     }
 
     private void OnDisable() {
         InventoryManager.Instance.OnInventoryChanged -= HandleInventoryChanged;
-        quickSlotUI.gameObject.SetActive(true);
+        //quickSlotUI.gameObject.SetActive(true);
     }
 
 

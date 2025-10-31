@@ -7,6 +7,8 @@ public enum InteractionType {
 	Talk,
 	Listen,
 	Trade,
+	BuildingEntry,
+	BuildingExit,
 }
 
 

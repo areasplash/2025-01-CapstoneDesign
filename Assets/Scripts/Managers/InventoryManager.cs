@@ -36,15 +36,30 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
 
     public bool AddItem(ItemBase item) {
         bool result = inventories[item.ItemData.ItemType].AddItem(item);
-        if (result) { OnInventoryChanged?.Invoke(); }
+        if (result) { 
+            item.OnCountChanged += HandleItemCountChanged;
+            OnInventoryChanged?.Invoke();
+        }
         return result;
     }
 
     public bool RemoveItem(ItemBase item) {
         bool result = inventories[item.ItemData.ItemType].RemoveItem(item);
-        if (result) { OnInventoryChanged?.Invoke(); }
+        if (result) { 
+            item.OnCountChanged -= HandleItemCountChanged;
+            OnInventoryChanged?.Invoke();
+        }
         return result;
     }
+
+    private void HandleItemCountChanged(ItemBase item) {
+        Debug.Log("Here!");
+        OnInventoryChanged?.Invoke();
+        if (item.Count <= 0) {
+            RemoveItem(item);
+        }
+    }
+
     public void SelectSlot(int index) {
         currentSlotIndex = index;
         OnInventoryChanged?.Invoke();
@@ -62,6 +77,7 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start() {
         // TODO 테스트 코드
+        /*
         InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("CarrotSeed")));
         InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("CarrotSeed")));
         InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("CarrotSeed")));
@@ -71,7 +87,7 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
         InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("WaterCan")));
         InventoryManager.Instance.AddItem(new ToolItem(ItemDatabase.Instance.GetItemData("WaterCan")));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("VendingMachineRedItem"), 5));
-        InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("VendingMachineRedItem"), 5));
+        InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("SimpleBedItem"), 5));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("GlassSquareTableItem"), 5));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("WoodenSquareTableItem"), 2));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("WoodenRoundTableItem"), 2));
@@ -79,6 +95,12 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("WoodenRoundTableItem"), 2));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("VendingMachineRedItem"), 5));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("FountainItem"), 2));
+        */
+        InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("CarrotSeed"));
+        InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("WaterCan"));
+        InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("VendingMachineRedItem"));
+        InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("FountainItem"));
+        InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("SimpleBedItem", 5));
     }
 
     // Update is called once per frame
