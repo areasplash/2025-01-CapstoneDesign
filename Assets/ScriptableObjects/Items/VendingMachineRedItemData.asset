@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: VendingMachineRedItem
   itemName: "\uBE68\uAC04 \uC790\uD310\uAE30"
+  itemDescription: "\uC74C\uB8CC\uC218\uB97C \uBF51\uC544 \uBA39\uC744 \uC218 \uC788\uB294
+    \uBE68\uAC04 \uC790\uD310\uAE30\uC774\uB2E4."
   itemType: 5
   isStackable: 1
   itemIconSprite: {fileID: 1072920363971634930, guid: df09ca6ddc4f07646b7c09d1e949b630, type: 3}

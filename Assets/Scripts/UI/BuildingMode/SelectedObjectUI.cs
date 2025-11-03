@@ -44,6 +44,7 @@ public class SelectedObjectUI : MonoBehaviour
 
         rotateNextButton.onClick.RemoveListener(OnClickRotateNext);
         rotatePrevButton.onClick.RemoveListener(OnClickRotatePrev);
+        removeButton.onClick.RemoveListener(OnClickRemove);
     }
 
     void Update() {

@@ -10,11 +10,6 @@ public class GhostObject : MapObjectBase {
         base.Update();
 
         FollowMouse();
-
-        // TODO 회전 버튼 따로 만들기
-        if (InputManager.GetKeyDown(KeyAction.Jump)) {
-            RotateNext();
-        }
     }
 
     public void Init(MapObjectData newData = null) {

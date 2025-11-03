@@ -21,6 +21,8 @@ public class Teleporter : MonoBehaviour, IInteractable
     public void Interact(GameObject interactor) {
         if (isLocked) {
             // 잠김 문구 출력
+            UIManager.EnqueueDialogue("", lockComment);
+            return;
         }
         if (fadeTransition) { FadeAndTeleport(interactor).Forget(); }
         else { Teleport(interactor); }

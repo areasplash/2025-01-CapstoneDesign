@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: WoodenRoundTableItem
   itemName: "\uB098\uBB34 \uC6D0\uD615 \uD14C\uC774\uBE14"
+  itemDescription: "\uB098\uBB34\uB85C \uB9CC\uB4E4\uC5B4\uC9C4 \uC6D0\uD615 \uD14C\uC774\uBE14\uC774\uB2E4."
   itemType: 5
   isStackable: 1
   itemIconSprite: {fileID: 21300000, guid: 3f200119d68cb6649bdcbb48237431f9, type: 3}

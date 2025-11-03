@@ -2,6 +2,8 @@ using UnityEngine;
 using System;
 
 public abstract class ItemBase {
+    public readonly Guid InstanceId = Guid.NewGuid();
+
     public ItemData ItemData { get; protected set; }
     public int Count { get; private set; } = 1;
 

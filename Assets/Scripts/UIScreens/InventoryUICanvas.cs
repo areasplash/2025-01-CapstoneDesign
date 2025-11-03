@@ -37,9 +37,14 @@ public class InventoryUICanvas : ScreenBase {
         foreach (var entry in tabIconsList) {
             tabIcons[entry.itemType] = entry.icon;
         }
+        BuildSlots();
     }
 
-    private void Start() {
+    private void Start() {   
+        HandleInventoryChanged();
+    }
+
+    private void BuildSlots() {
         for (int i = 0; i < maxSlotNum; i++) {
             var slot = Instantiate(slotPrefab, slotContainer);
             slot.Init(i);
@@ -58,8 +63,6 @@ public class InventoryUICanvas : ScreenBase {
             quickSlot.Init(i);
             quiclSlotUIs.Add(quickSlot);
         }
-        
-        HandleInventoryChanged();
     }
 
     protected override void Update() {

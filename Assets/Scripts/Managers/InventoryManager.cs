@@ -53,7 +53,6 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
     }
 
     private void HandleItemCountChanged(ItemBase item) {
-        Debug.Log("Here!");
         OnInventoryChanged?.Invoke();
         if (item.Count <= 0) {
             RemoveItem(item);
@@ -103,6 +102,11 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
         InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("SimpleBedItem", 5));
     }
 
+    private void OnEnable() {
+        isDragging = false;
+        dragImage.gameObject.SetActive(false);
+    }
+
     // Update is called once per frame
     void Update() {
         // 아이템 드래그 처리
@@ -110,17 +114,27 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
     }
 
     private void ItemDrag() {
-        if (dragImage.gameObject.activeSelf) {
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                canvas.transform as RectTransform,
-                Mouse.current.position.ReadValue(),
-                canvas.worldCamera,
-                out Vector2 localPos);
-            dragImage.rectTransform.localPosition = localPos;
+        if (!isDragging || dragImage == null || !dragImage.gameObject.activeSelf) {
+            return;
+        }
+        Vector2 screenPos = InputManager.PointPositionSafe;
+        if (screenPos == Vector2.zero) {
+            return;
+        }
+        //dragImage.rectTransform.anchoredPosition = screenPos;
+        
+        var rectCanvas = canvas.transform as RectTransform;
+        Camera cam = null;
+        if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
+            cam = canvas.worldCamera;
 
-            if (Mouse.current.leftButton.wasReleasedThisFrame) {
-                EndItemDrag();
-            }
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                rectCanvas, screenPos, cam, out Vector2 localPos)) {
+            dragImage.rectTransform.anchoredPosition = localPos;
+        }
+        
+        if (InputManager.GetKeyUp(KeyAction.Click)) {
+            EndItemDrag();
         }
     }
 
