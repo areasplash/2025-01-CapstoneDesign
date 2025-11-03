@@ -48,6 +48,10 @@ public abstract class Actor : MonoBehaviour {
 	[SerializeField] float m_Speed = 4f;
 	Queue<Vector3> m_PathPoints = new();
 
+	[SerializeField] Scheduler m_Scheduler;
+	string m_BehaviorName;
+	float m_BehaviorStartTime;
+
 
 
 	// Properties
@@ -135,6 +139,21 @@ public abstract class Actor : MonoBehaviour {
 
 
 
+	protected Scheduler Scheduler {
+		get => m_Scheduler;
+		set => m_Scheduler = value;
+	}
+	public string BehaviorName {
+		get => m_BehaviorName;
+		set => m_BehaviorName = value;
+	}
+	public float BehaviorStartTime {
+		get => m_BehaviorStartTime;
+		set => m_BehaviorStartTime = value;
+	}
+
+
+
 	// Methods
 
 	protected float GetDistance(GameObject target) {
@@ -182,25 +201,35 @@ public abstract class Actor : MonoBehaviour {
 
 
 
-	protected virtual void Simulate() {
-	}
+	protected virtual void Simulate() { }
 
 	protected virtual void Act() {
+		if (Scheduler) {
+			var behaviorName = BehaviorName;
+			var position = Scheduler.GetNextBehavior(this, EnvironmentManager.TimeOfDay);
+			if (behaviorName != BehaviorName) {
+				PathPoints.Clear();
+				PathPoints.Enqueue(new(position.x, position.y));
+			}
+		}
 		if (PathPoints.TryPeek(out var point)) {
 			MoveVector = (((Vector2)point - Body.position) / GameManager.GridMultiplier).normalized;
 			Body.linearVelocity = GameManager.GridMultiplier * MoveVector * Speed;
-
-			if (Vector2.Distance(Body.position, point) < 0.1f) {
-				PathPoints.Dequeue();
-				if (PathPoints.Count == 0) State = State.Idle;
-			}
+			if (Vector2.Distance(Body.position, point) < 0.1f) PathPoints.Dequeue();
+		} else {
+			MoveVector = default;
 		}
 	}
 
 	protected virtual void Draw() {
-		State = 0.01f < MoveVector.sqrMagnitude ? State.Moving : State.Idle;
-		FlipX = MoveVector.x != 0f ? MoveVector.x < 0f : FlipX;
-		MoveVector = default;
+		switch (BehaviorName) {
+			case "":
+				break;
+			default:
+				State = (0.1f < MoveVector.magnitude) ? State.Moving : State.Idle;
+				FlipX = (MoveVector.x != 0f) ? MoveVector.x < 0f : FlipX;
+				break;
+		}
 	}
 
 
