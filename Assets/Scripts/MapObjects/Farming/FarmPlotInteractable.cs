@@ -23,8 +23,6 @@ public class FarmPlotInteractable : MonoBehaviour, IInteractable
             parentPlot.PlantSeed(PlantDatabase.Instance.GetPlantData(seed.GetPlantId()));
         }
         else if (parentPlot.CurrentPlant.IsHarvestable()) {
-            // TODO 아이템 획득 로직 추가 필요
-            
             Debug.Log("수확!");
             parentPlot.HarvestPlant();
         }

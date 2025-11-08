@@ -62,6 +62,11 @@ public class QuickSlotManager : MonoSingleton<QuickSlotManager> {
         if (item is ToolItem toolItem) {
             toolItem.Use();
         }
+        else {
+            // 툴이 아니면 맨손 전환
+            ToolManager toolManager = GameManager.Player.GetComponent<ToolManager>();
+            toolManager.EquipNone();
+        }
         if (item is MapObjectItem mapObjectItem) {
             // 빌딩모드 돌입
             Debug.Log("MapObject!");

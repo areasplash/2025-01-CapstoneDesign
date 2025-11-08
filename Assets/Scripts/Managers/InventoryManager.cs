@@ -19,12 +19,15 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
     private bool isDragging = false;
     public bool IsDragging => isDragging;
     public event Action OnInventoryChanged;
+    public event Action<string> OnItemChanged;
 
     protected override void Awake() {
         base.Awake();
         foreach (ItemType type in Enum.GetValues(typeof(ItemType))) {
             inventories[type] = new Inventory();
         }
+        // 아이템 변경 시 게임 전역으로 바로 브로드캐스트
+        OnItemChanged += (id) => GameplayEvents.RaiseItemChanged(id);
     }
 
     public ItemBase GetItemAt(int index, ItemType itemType) {
@@ -38,23 +41,35 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
         bool result = inventories[item.ItemData.ItemType].AddItem(item);
         if (result) { 
             item.OnCountChanged += HandleItemCountChanged;
+            OnItemChanged?.Invoke(item.ItemData.ItemId);
             OnInventoryChanged?.Invoke();
         }
         return result;
     }
 
+    public bool AddItem(ItemData itemData) {
+        return InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem(itemData));
+    }
+
+    public bool AddItem(String itemId) {
+        return InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem(itemId));
+    }
+
     public bool RemoveItem(ItemBase item) {
         bool result = inventories[item.ItemData.ItemType].RemoveItem(item);
-        if (result) { 
+        if (result) {
             item.OnCountChanged -= HandleItemCountChanged;
+            OnItemChanged?.Invoke(item.ItemData.ItemId);
             OnInventoryChanged?.Invoke();
         }
         return result;
     }
 
     private void HandleItemCountChanged(ItemBase item) {
-        OnInventoryChanged?.Invoke();
-        if (item.Count <= 0) {
+        if (item.Count > 0) {
+            OnInventoryChanged?.Invoke();
+            OnItemChanged?.Invoke(item.ItemData.ItemId);
+        } else {
             RemoveItem(item);
         }
     }

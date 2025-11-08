@@ -24,6 +24,7 @@ public enum Screen {
 	Shop,
 	FadeLoading,
 	Inventory,
+	Toast,
 }
 
 public static class ScreenExtensions {
@@ -41,6 +42,7 @@ public static class ScreenExtensions {
 		Screen.Shop         => typeof(ShopScreen),
 		Screen.FadeLoading  => typeof(FadeLoadingScreen),
 		Screen.Inventory    => typeof(InventoryUICanvas),
+		Screen.Toast        => typeof(ToastScreen),
 		_ => default,
 	};
 
@@ -52,12 +54,13 @@ public static class ScreenExtensions {
 		_ when screenBase is FadeScreen         => Screen.Fade,
 		_ when screenBase is GameScreen         => Screen.Game,
 		_ when screenBase is MainMenuScreen     => Screen.MainMenu,
-		_ when screenBase is BuildingModeScreen    => Screen.BuildingMode,
+		_ when screenBase is BuildingModeScreen => Screen.BuildingMode,
 		_ when screenBase is MenuScreen         => Screen.Menu,
 		_ when screenBase is OptionsScreen      => Screen.Options,
 		_ when screenBase is ShopScreen         => Screen.Shop,
 		_ when screenBase is FadeLoadingScreen  => Screen.FadeLoading,
 		_ when screenBase is InventoryUICanvas  => Screen.Inventory,
+		_ when screenBase is ToastScreen        => Screen.Toast,
 		_ => default,
 	};
 }
@@ -346,9 +349,9 @@ public class UIManager : MonoSingleton<UIManager> {
         var policy = InputPolicy.PlayerOnly;
 
         foreach (var s in ScreenStack) {
-            if (s == null) continue;
-            if (s.InputPolicy == InputPolicy.UIOnly) return InputPolicy.UIOnly;
-            if (s.InputPolicy == InputPolicy.Both)  policy = InputPolicy.Both;
+            if (s == null) { continue; }
+            if (s.InputPolicy == InputPolicy.UIOnly) { return InputPolicy.UIOnly; }
+            if (s.InputPolicy == InputPolicy.Both) { policy = InputPolicy.Both; }
         }
         return policy;
     }
@@ -446,6 +449,13 @@ public class UIManager : MonoSingleton<UIManager> {
 		set => ConfirmationScreen.OnCancelled = value;
 	}
 
+	// Toast Screen
+	static ToastScreen ToastScreen => (ToastScreen)ScreenBases[(int)Screen.Toast];
+	
+	public static void ShowToast(ToastIconType iconType, string title, string body) {
+        var sb = OpenScreen(Screen.Toast) as ToastScreen;
+        sb?.SetContent(iconType, title, body);
+    }
 
 
 	// Dialogue Screen Methods

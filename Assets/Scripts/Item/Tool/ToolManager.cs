@@ -8,24 +8,48 @@ public class ToolManager : MonoBehaviour
     public ToolBase EquippedTool => equippedTool;
 
     public void EquipTool(ItemData data) {
-        if (!data.IsTool || string.IsNullOrEmpty(data.ToolClassName)) { return; }
+        // 기존 툴 컴포넌트 모두 제거
+        RemoveAllToolComponents();
 
-        // 기존 ToolBase 제거
-        if (equippedTool != null) {
-            foreach (var oldTool in toolObject.GetComponents<ToolBase>()) {
-                Destroy(oldTool);
-            }
+        // null 이면 맨손 전환
+        if (data == null) {
+            equippedTool = null;
+            toolVisual?.SetSprite(null);
+            // 툴 오브젝트 숨김
+            // if (toolObject) { toolObject.SetActive(false); }
+            return;
+        }
+
+        // 툴이 아닌 데이터면 실패
+        if (!data.IsTool || string.IsNullOrEmpty(data.ToolClassName)) { 
+            equippedTool = null;
+            toolVisual?.SetSprite(null);
+            return;
         }
 
         equippedTool = data.AttachToolComponent(toolObject);
         toolVisual?.SetSprite(data);
     }
 
+    public void EquipNone() => EquipTool(null);
+    
+    void RemoveAllToolComponents() {
+        if (!toolObject) {
+            return;
+        }
+        var olds = toolObject.GetComponents<ToolBase>();
+        for (int i = 0; i < olds.Length; i++) {
+            Destroy(olds[i]);
+        }
+    }
+
+
     public void UseTool() {
         if (equippedTool != null) {
             equippedTool.Use();
         }
     }
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start() {
         toolVisual = toolObject?.GetComponent<ToolVisual>();
