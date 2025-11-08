@@ -215,9 +215,10 @@ public abstract class Actor : MonoBehaviour {
 		if (PathPoints.TryPeek(out var point)) {
 			MoveVector = (((Vector2)point - Body.position) / GameManager.GridMultiplier).normalized;
 			Body.linearVelocity = GameManager.GridMultiplier * MoveVector * Speed;
-			if (Vector2.Distance(Body.position, point) < 0.1f) PathPoints.Dequeue();
-		} else {
-			MoveVector = default;
+			if (Vector2.Distance(Body.position, point) < 0.1f) {
+				PathPoints.Dequeue();
+				MoveVector = default;
+			}
 		}
 	}
 
