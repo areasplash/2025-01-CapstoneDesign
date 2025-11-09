@@ -6502,6 +6502,11 @@ MonoBehaviour:
   m_DetailPanelDataText: {fileID: 314888411}
   m_Anchor: {fileID: 960922810}
   m_ItemButtomTemplate: {fileID: 1359563450}
+--- !u!4 &720270905 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+  m_PrefabInstance: {fileID: 1898814363}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &728242625
 GameObject:
   m_ObjectHideFlags: 0
@@ -15061,39 +15066,39 @@ MonoBehaviour:
         m_Prevs: []
         m_Nexts:
         - eventBase:
-            rid: 6018504718568915026
+            rid: 6018504735117279301
           iPort: 0
           oPort: 0
           iPortType: 0
           oPortType: 0
-    - rid: 6018504718568915026
+    - rid: 6018504735117279301
       type: {class: IfMissionActiveEvent, ns: , asm: Assembly-CSharp}
       data:
         m_Guid: 77be407c-8fd4-4d6b-a1eb-4216d7730d6d
-        m_Position: {x: 120, y: -36}
+        m_Position: {x: 166, y: -62}
         m_Prevs:
         - eventBase:
-            rid: 6018504718568915027
+            rid: 6018504735117279302
           iPort: 0
           oPort: 0
           iPortType: 0
           oPortType: 0
         m_Nexts:
         - eventBase:
-            rid: 6018504718568915028
+            rid: 6018504735117279303
           iPort: 0
           oPort: 0
           iPortType: 0
           oPortType: 0
         - eventBase:
-            rid: 6018504718568915029
+            rid: 6018504735117279304
           iPort: 0
           oPort: 1
           iPortType: 0
           oPortType: 0
         m_QuestId: test_q1
         m_MissionIndex: 0
-    - rid: 6018504718568915027
+    - rid: 6018504735117279302
       type: {class: EntryEvent, ns: , asm: Assembly-CSharp}
       data:
         m_Guid: 81baa510-414b-40f7-9d04-a47edf0e3084
@@ -15101,26 +15106,26 @@ MonoBehaviour:
         m_Prevs: []
         m_Nexts:
         - eventBase:
-            rid: 6018504718568915026
+            rid: 6018504735117279301
           iPort: 0
           oPort: 0
           iPortType: 0
           oPortType: 0
-    - rid: 6018504718568915028
+    - rid: 6018504735117279303
       type: {class: DialogueEvent, ns: , asm: Assembly-CSharp}
       data:
         m_Guid: 035a8f7e-92bc-4841-a96b-faf4345a66e8
-        m_Position: {x: 415, y: -109}
+        m_Position: {x: 461, y: -137}
         m_Prevs:
         - eventBase:
-            rid: 6018504718568915026
+            rid: 6018504735117279301
           iPort: 0
           oPort: 0
           iPortType: 0
           oPortType: 0
         m_Nexts:
         - eventBase:
-            rid: 6018504718568915030
+            rid: 6018504735117279305
           iPort: 0
           oPort: 0
           iPortType: 0
@@ -15130,14 +15135,78 @@ MonoBehaviour:
         texts:
         - "\uC548\uB155 \uD018\uC2A4\uD2B8 \uC911\uC774\uB124? \uB2F9\uADFC\uC774\uB098
           \uBAA8\uC73C\uB834!"
-    - rid: 6018504718568915029
+    - rid: 6018504735117279304
+      type: {class: IfMissionActiveEvent, ns: , asm: Assembly-CSharp}
+      data:
+        m_Guid: 282f45d3-6e49-454a-8e7a-7b8ab953f3a8
+        m_Position: {x: 455, y: 146}
+        m_Prevs:
+        - eventBase:
+            rid: 6018504735117279301
+          iPort: 0
+          oPort: 1
+          iPortType: 0
+          oPortType: 0
+        m_Nexts:
+        - eventBase:
+            rid: 6018504735117279306
+          iPort: 0
+          oPort: 0
+          iPortType: 0
+          oPortType: 0
+        - eventBase:
+            rid: 6018504735117279307
+          iPort: 0
+          oPort: 1
+          iPortType: 0
+          oPortType: 0
+        m_QuestId: test_q1
+        m_MissionIndex: 2
+    - rid: 6018504735117279305
+      type: {class: RaiseDialogueCompletedEvent, ns: , asm: Assembly-CSharp}
+      data:
+        m_Guid: fe24b95a-eced-4d80-bc4a-54cec4d36de6
+        m_Position: {x: 727, y: -133}
+        m_Prevs:
+        - eventBase:
+            rid: 6018504735117279303
+          iPort: 0
+          oPort: 0
+          iPortType: 0
+          oPortType: 0
+        m_Nexts: []
+        m_DialogueId: q1_yejin
+    - rid: 6018504735117279306
+      type: {class: DialogueEvent, ns: , asm: Assembly-CSharp}
+      data:
+        m_Guid: 73f1e568-21b6-4483-b4c8-6d340e90cd47
+        m_Position: {x: 784, y: 29}
+        m_Prevs:
+        - eventBase:
+            rid: 6018504735117279304
+          iPort: 0
+          oPort: 0
+          iPortType: 0
+          oPortType: 0
+        m_Nexts:
+        - eventBase:
+            rid: 6018504735117279308
+          iPort: 0
+          oPort: 0
+          iPortType: 0
+          oPortType: 0
+        names:
+        - "\uC608\uC9C4"
+        texts:
+        - "\uC798 \uBAA8\uC558\uB124! \uD074\uB9AC\uC5B4 \u314A\u314A"
+    - rid: 6018504735117279307
       type: {class: DialogueEvent, ns: , asm: Assembly-CSharp}
       data:
         m_Guid: cebd703f-3ae6-4542-9ee5-818efd53e862
-        m_Position: {x: 421, y: 93}
+        m_Position: {x: 770, y: 258}
         m_Prevs:
         - eventBase:
-            rid: 6018504718568915026
+            rid: 6018504735117279304
           iPort: 0
           oPort: 1
           iPortType: 0
@@ -15147,20 +15216,20 @@ MonoBehaviour:
         - "\uC608\uC9C4"
         texts:
         - "\u314E\u3147 \uBC29\uAC00"
-    - rid: 6018504718568915030
+    - rid: 6018504735117279308
       type: {class: RaiseDialogueCompletedEvent, ns: , asm: Assembly-CSharp}
       data:
-        m_Guid: fe24b95a-eced-4d80-bc4a-54cec4d36de6
-        m_Position: {x: 680, y: -108}
+        m_Guid: ca495908-bf79-4b60-9b6b-8287ea4fa0d2
+        m_Position: {x: 1067, y: 29}
         m_Prevs:
         - eventBase:
-            rid: 6018504718568915028
+            rid: 6018504735117279306
           iPort: 0
           oPort: 0
           iPortType: 0
           oPortType: 0
         m_Nexts: []
-        m_DialogueId: q1_yejin
+        m_DialogueId: q1_yejin2
 --- !u!1001 &1432243586
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18066,6 +18135,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2856287374656798845, guid: 5de832f5292fd1845a358818cdec14f2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 236249404}
+    - targetCorrespondingSourceObject: {fileID: 2856287374656798845, guid: 5de832f5292fd1845a358818cdec14f2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 720270905}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5de832f5292fd1845a358818cdec14f2, type: 3}
 --- !u!4 &1741133928 stripped
@@ -18816,6 +18888,10 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: e1fb4cd2190e445449a4ee554f7c4909, type: 3}
   - type: 2
     sprite: {fileID: 21300000, guid: ef110c13cbe0d9f4da09d82f013179c1, type: 3}
+  - type: 3
+    sprite: {fileID: 21300000, guid: 0c2ea10f528b7dc43a2ff68a7189c18c, type: 3}
+  - type: 4
+    sprite: {fileID: 21300000, guid: a7b1c79900acb134c9516b34fc94d0f5, type: 3}
   fallbackSprite: {fileID: 0}
 --- !u!1 &1818269171
 GameObject:
@@ -19268,6 +19344,67 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 325efff0ad6a45049985011be639dc26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1001 &1898814363
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1741133928}
+    m_Modifications:
+    - target: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.73
+      objectReference: {fileID: 0}
+    - target: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.69
+      objectReference: {fileID: 0}
+    - target: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 527831908073452296, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7631045247759595614, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: data
+      value: 
+      objectReference: {fileID: 11400000, guid: f8be524f4c819104b95006e34b07874d, type: 2}
+    - target: {fileID: 8064523469718339770, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
+      propertyPath: m_Name
+      value: MapObject
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d6b51e2cc34714742976e5397aff1ac7, type: 3}
 --- !u!1 &1924313358
 GameObject:
   m_ObjectHideFlags: 0

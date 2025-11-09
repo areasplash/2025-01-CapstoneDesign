@@ -63,19 +63,19 @@ public class QuestListUI : MonoBehaviour {
         foreach (var qi in QuestManager.Instance.GetActiveQuests()) {
             var def = qi.Def;
             var item = GetFromPool(container);
-            item.Setup(def.questId, def.title, OnItemClicked, selectedQuestId);
+            item.Setup(def.questId, def.title, OnItemClicked, selectedQuestId, false);
         }
 
         // 완료 리스트
         foreach (var id in QuestManager.Instance.GetCompletedQuestIds()) {
             if (QuestManager.Instance.TryGetDefinition(id, out var def)) {
                 var item = GetFromPool(container);
-                item.Setup(def.questId, def.title, OnItemClicked, selectedQuestId);
+                item.Setup(def.questId, def.title, OnItemClicked, selectedQuestId, true);
             }
             else {
                 // 퀘스트 정의를 못 찾으면 ID만 출력
                 var item = GetFromPool(container);
-                item.Setup(id, $"[{id}]", OnItemClicked, selectedQuestId);
+                item.Setup(id, $"[{id}]", OnItemClicked, selectedQuestId, true);
             }
         }
     }

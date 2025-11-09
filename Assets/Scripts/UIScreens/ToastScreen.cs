@@ -9,6 +9,8 @@ public enum ToastIconType {
     None = 0,
     QuestStart,
     MissionComplete,
+    MissionStart,
+    QuestComplete,
 }
 
 [Serializable]
@@ -37,6 +39,11 @@ public class ToastScreen : ScreenBase {
     [SerializeField] private List<IconPair> iconPairs = new();
     [SerializeField] private Sprite fallbackSprite;
     private Dictionary<ToastIconType, Sprite> iconDict;
+
+    public event Action OnClosed;
+    private bool isPlaying;
+    public bool IsPlaying => isPlaying;
+    private bool closedNotified;
 
 
     // 고정 파라미터
@@ -107,6 +114,12 @@ public class ToastScreen : ScreenBase {
 
     public override void Show() {
         base.Show();
+        closedNotified = false;
+        isPlaying = false;
+    }
+
+    public void PlayAnim() {
+        closedNotified = false;
         PrepareInitialState();
         if (playCo != null) {
             StopCoroutine(playCo);
@@ -119,7 +132,31 @@ public class ToastScreen : ScreenBase {
             StopCoroutine(playCo);
             playCo = null;
         }
+        isPlaying = false;
+        SafeNotifyClose();
         base.Hide();
+    }
+
+    void OnEnable() {
+        closedNotified = false;
+        isPlaying = false;
+    }
+
+
+    private void OnDisable() {
+        isPlaying = false;
+        SafeNotifyClose();
+    }
+
+    private void OnDestroy() {
+        isPlaying = false;
+        SafeNotifyClose();
+    }
+
+    private void SafeNotifyClose() {
+        if (closedNotified) { return; }
+        closedNotified = true;
+        try { OnClosed?.Invoke(); } catch {}
     }
 
     private void PrepareInitialState() {
@@ -140,6 +177,8 @@ public class ToastScreen : ScreenBase {
     }
 
     private IEnumerator PlaySequence() {
+        isPlaying = true;
+
         // 아이콘 스케일 애니메이션
         if (iconObject) {
             float t = 0f;
@@ -192,7 +231,10 @@ public class ToastScreen : ScreenBase {
         }
 
         // 토스트 종료
+        isPlaying = false;
+        SafeNotifyClose();
         playCo = null;
-        UIManager.CloseScreen(this);
+        //UIManager.CloseScreen(this);
+        gameObject.SetActive(false);
     }
 }

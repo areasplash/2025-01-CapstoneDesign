@@ -15,8 +15,18 @@ public abstract class MissionInstance {
 
     protected MissionInstance(MissionData def) { Def = def; }
 
-    public virtual void Activate() { State = MissionState.Active; Bind(); }
-    public virtual void Deactivate() { Unbind(); State = MissionState.Inactive; }
+    public virtual void Activate() { 
+        State = MissionState.Active;
+        Bind();
+
+        // 토스트 UI 표시
+        string questTitle = Owner?.Def?.title ?? "(알 수 없음)";
+        UIManager.ShowToast(ToastIconType.MissionStart, "다음 목표", $"{questTitle} - {Def.title}");
+    }
+    public virtual void Deactivate() {
+        Unbind();
+        State = MissionState.Inactive;
+    }
     protected void ReportProgress(int current, int target) {
         Progress = current; Target = target;
         OnProgress?.Invoke(this);

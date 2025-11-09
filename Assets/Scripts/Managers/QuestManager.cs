@@ -39,21 +39,21 @@ public class QuestManager : MonoSingleton<QuestManager> {
         var m1 = ScriptableObject.CreateInstance<TalkDialogueMissionData>();
         m1.title = "예진이에게 말 걸기";
         m1.descriptionWhenActive = "예진에게 말을 걸어보자";
-        m1.descriptionWhenDone = "예진과 대화를 마쳤다";
+        m1.descriptionWhenDone = "예진과 대화를 마쳤다. 당근을 모아오라고 한다!";
         m1.dialogueId = "q1_yejin";
 
         var m2 = ScriptableObject.CreateInstance<CollectItemMissionData>();
         m2.title = $"당근 {targetCount}개 모으기";
         m2.descriptionWhenActive = "당근을 모으자";
-        m2.descriptionWhenDone = "당근을 충분히 모았다";
+        m2.descriptionWhenDone = "당근을 충분히 모았다. 다시 예진에게 가보자!";
         m2.itemId = itemId;
         m2.targetCount = targetCount;
 
         var m3 = ScriptableObject.CreateInstance<TalkDialogueMissionData>();
-        m3.title = "민수에게 말 걸기";
-        m3.descriptionWhenActive = "민수에게 말을 걸자! 스크롤테스트 스크롤테스트 스크롤테스트 스크롤테스트 스크롤테스트 스크롤테스트 스크롤테스트ㅍ 스크롤테스트";
-        m3.descriptionWhenDone = "민수와 대화를 마쳤다";
-        m3.dialogueId = "q1_minsu";
+        m3.title = "다시 예진이에게 말 걸기";
+        m3.descriptionWhenActive = "예진에게 말을 걸어보자";
+        m3.descriptionWhenDone = "예진과 대화를 마쳤다. 고생했다고 한다!";
+        m3.dialogueId = "q1_yejin2";
 
         q.missions.Add(m1);
         q.missions.Add(m2);
@@ -162,6 +162,10 @@ public class QuestManager : MonoSingleton<QuestManager> {
 
         // 퀘스트 완료 알림
         OnQuestCompleted?.Invoke(id);
+
+        // 토스트 UI 표시
+        string questTitle = qi?.Def?.title ?? "(알 수 없음)";
+        UIManager.ShowToast(ToastIconType.QuestComplete, "퀘스트 완료", questTitle);
 
         // TODO: 보상 지급
         // 다음 퀘스트 체인 자동 오픈

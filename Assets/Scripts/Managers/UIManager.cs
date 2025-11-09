@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 #if UNITY_EDITOR
@@ -450,12 +451,82 @@ public class UIManager : MonoSingleton<UIManager> {
 	}
 
 	// Toast Screen
-	static ToastScreen ToastScreen => (ToastScreen)ScreenBases[(int)Screen.Toast];
+
+	[Serializable]
+	struct ToastRequest {
+		public ToastIconType icon;
+		public string title;
+		public string body;
+		public ToastRequest(ToastIconType i, string t, string b) {
+			icon = i; title = t; body = b;
+		}
+	}
+
+	private Queue<ToastRequest> toastQueue = new();
+	private bool toastLoopRunning = false;
+	private bool toastClosedFlag = false;
+
+	static ToastScreen ToastScreenSafe => (ToastScreen)ScreenBases[(int)Screen.Toast];
 	
-	public static void ShowToast(ToastIconType iconType, string title, string body) {
-        var sb = OpenScreen(Screen.Toast) as ToastScreen;
-        sb?.SetContent(iconType, title, body);
-    }
+	public static void ShowToast(ToastIconType icon, string title, string body) {
+		Instance.EnqueueToast(new ToastRequest(icon, title, body));
+		Instance.TryStartToastLoop();
+	}
+
+	private void EnqueueToast(ToastRequest req) {
+		toastQueue.Enqueue(req);
+	}
+
+	void TryStartToastLoop() {
+		if (toastLoopRunning) {
+			return;
+		}
+		StartCoroutine(ToastLoop());
+	}
+
+	private IEnumerator ToastLoop() {
+		toastLoopRunning = true;
+
+		// 스크린 하나만 열어서 재사용
+		var screen = ToastScreenSafe;
+		if (screen == null || !screen.gameObject.activeSelf) {
+			screen = OpenScreen(Screen.Toast) as ToastScreen;
+		}
+
+		// 중복 연결 방지
+		screen.OnClosed -= OnToastClosedSignal;
+		screen.OnClosed += OnToastClosedSignal;
+
+		while (toastQueue.Count > 0) {
+			var req = toastQueue.Dequeue();
+
+			// 컨텐츠 세팅하고 활성화
+			if (!screen.gameObject.activeSelf) { screen.gameObject.SetActive(true); }
+			screen.SetContent(req.icon, req.title, req.body);
+			// InputPolicy 업데이트 (OpenScreen이 아니므로)
+			ApplyInputPolicyFromStack();
+
+			// 닫힘 신호를 기다림
+			toastClosedFlag = false;
+			screen.PlayAnim();
+			yield return new WaitUntil(() => toastClosedFlag);
+
+			// 한 토스트 종료
+			// 다음 토스트가 있으면 계속
+		}
+
+		// 모두 끝났으면 닫기
+		if (screen) {
+			screen.gameObject.SetActive(false);
+			CloseScreen(screen);
+		}
+
+		toastLoopRunning = false;
+	}
+
+	private void OnToastClosedSignal() {
+		toastClosedFlag = true;
+	}
 
 
 	// Dialogue Screen Methods
