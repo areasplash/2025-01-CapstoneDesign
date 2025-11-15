@@ -132,76 +132,87 @@ public class Scheduler : ScriptableObject {
 
     // Methods
 
-	public Vector3 GetNextBehavior(Actor actor, float time) {
-		uint day = (uint)Mathf.FloorToInt(time);
-		uint seed = (uint)actor.GetInstanceID() ^ (day * 997);
+public Vector3 GetNextBehavior(Actor actor, float time) {
+		float day = Mathf.Floor(time);
 		float timeOfDay = (time - day) * 24f;
-		float totalWeight = 0f;
 
-		foreach (var behavior in Behaviors) if (behavior.isTimeFixed) {
-			uint behaviorSeed = seed ^ (uint)behavior.name.GetHashCode();
-			var random = new Random(behaviorSeed);
-			float startTime = random.NextFloat(behavior.minStartTime, behavior.maxStartTime);
-			float duration = random.NextFloat(behavior.minDuration, behavior.maxDuration);
-			if (timeOfDay >= startTime && timeOfDay < startTime + duration) {
-				if (actor.BehaviorName != behavior.name) {
-					actor.BehaviorName = behavior.name;
-					actor.BehaviorStartTime = time;
+		foreach (var behavior in Behaviors) {
+			if (behavior.isTimeFixed) {
+				if (timeOfDay >= behavior.minStartTime && timeOfDay < behavior.maxStartTime) {
+					if (actor.BehaviorName != behavior.name) {
+						actor.BehaviorName = behavior.name;
+						actor.BehaviorStartTime = time;
+						float durationInHours = UnityEngine.Random.Range(behavior.minDuration, behavior.maxDuration);
+						actor.BehaviorDuration = durationInHours / 24f;
+					}
+					
+					Vector3 position = actor.transform.position;
+					if (behavior.isLocationBased) {
+						Vector3 randomDirection = UnityEngine.Random.insideUnitSphere.normalized;
+						float randomRange = UnityEngine.Random.Range(0f, behavior.locationRange);
+						position = behavior.location + randomDirection * randomRange;
+					}
+					return position;
 				}
-				var position = actor.transform.position;
-				if (behavior.isLocationBased) {
-					var direction = (Vector3)random.NextFloat3Direction();
-					float range = random.NextFloat(0f, behavior.locationRange);
-					position = behavior.location + direction * range;
-				}
-				return position;
 			}
-		} else totalWeight += behavior.weight;
+		}
 
 		if (!string.IsNullOrEmpty(actor.BehaviorName)) {
-			var behavior = Behaviors.Find(b => b.name == actor.BehaviorName);
-			if (behavior.isTimeFixed) {
+			var currentBehavior = Behaviors.Find(b => b.name == actor.BehaviorName);
+
+			if (currentBehavior.isTimeFixed) {
 				actor.BehaviorName = null;
 			} else {
-				uint startDay = (uint)Mathf.FloorToInt(actor.BehaviorStartTime);
-				uint startSeed = (uint)actor.GetInstanceID() ^ (startDay * 997);
-				uint behaviorSeed = startSeed ^ (uint)behavior.name.GetHashCode();
-				var random = new Random(behaviorSeed);
-				float startTime = actor.BehaviorStartTime;
-				float duration = random.NextFloat(behavior.minDuration, behavior.maxDuration);
-				if (time < startTime + duration) {
-					var position = actor.transform.position;
-					if (behavior.isLocationBased) {
-						var direction = (Vector3)random.NextFloat3Direction();
-						float range = random.NextFloat(0f, behavior.locationRange);
-						position = behavior.location + direction * range;
+				float behaviorEndTime = actor.BehaviorStartTime + actor.BehaviorDuration;
+				if (time < behaviorEndTime) {
+					Vector3 position = actor.transform.position;
+					if (currentBehavior.isLocationBased) {
+						Vector3 randomDirection = UnityEngine.Random.insideUnitSphere.normalized;
+						float randomRange = UnityEngine.Random.Range(0f, currentBehavior.locationRange);
+						position = currentBehavior.location + randomDirection * randomRange;
 					}
 					return position;
 				} else {
 					actor.BehaviorName = null;
 				}
 			}
-		} {
-			var behavior = (Behavior)default;
-			var temp = new Random(seed ^ (uint)(time * 100000));
-			float value = temp.NextFloat(0f, totalWeight);
-			foreach (var behav1or in Behaviors) if (!behav1or.isTimeFixed) {
-				if ((value -= behav1or.weight) <= 0f) {
-					behavior = behav1or;
-					break;
-				}
-			}
-			actor.BehaviorName = behavior.name;
-			actor.BehaviorStartTime = time;
-			uint behaviorSeed = seed ^ (uint)behavior.name.GetHashCode();
-			var random = new Random(behaviorSeed);
-			var position = actor.transform.position;
-			if (behavior.isLocationBased) {
-				var direction = (Vector3)random.NextFloat3Direction();
-				float range = random.NextFloat(0f, behavior.locationRange);
-				position = behavior.location + direction * range;
-			}
-			return position;
 		}
+
+		List<Behavior> randomBehaviors = new List<Behavior>();
+		float totalWeight = 0f;
+		foreach (var behavior in Behaviors) {
+			if (!behavior.isTimeFixed) {
+				randomBehaviors.Add(behavior);
+				totalWeight += behavior.weight;
+			}
+		}
+
+		if (randomBehaviors.Count == 0) {
+			return actor.transform.position;
+		}
+
+		float randomRoll = UnityEngine.Random.Range(0f, totalWeight);
+		Behavior selectedBehavior = randomBehaviors[randomBehaviors.Count - 1];
+
+		foreach (var behavior in randomBehaviors) {
+			if (randomRoll <= behavior.weight) {
+				selectedBehavior = behavior;
+				break;
+			}
+			randomRoll -= behavior.weight;
+		}
+
+		actor.BehaviorName = selectedBehavior.name;
+		actor.BehaviorStartTime = time;
+		float newDurationInHours = UnityEngine.Random.Range(selectedBehavior.minDuration, selectedBehavior.maxDuration);
+		actor.BehaviorDuration = newDurationInHours / 24f;
+
+		Vector3 newPosition = actor.transform.position;
+		if (selectedBehavior.isLocationBased) {
+			Vector3 randomDirection = UnityEngine.Random.insideUnitSphere.normalized;
+			float randomRange = UnityEngine.Random.Range(0f, selectedBehavior.locationRange);
+			newPosition = selectedBehavior.location + randomDirection * randomRange;
+		}
+		return newPosition;
 	}
 }
