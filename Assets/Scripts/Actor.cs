@@ -51,6 +51,7 @@ public abstract class Actor : MonoBehaviour {
 	[SerializeField] Scheduler m_Scheduler;
 	string m_BehaviorName;
 	float m_BehaviorStartTime;
+	float m_BehaviorDuration;
 
 
 
@@ -151,6 +152,10 @@ public abstract class Actor : MonoBehaviour {
 		get => m_BehaviorStartTime;
 		set => m_BehaviorStartTime = value;
 	}
+	public float BehaviorDuration {
+		get => m_BehaviorDuration;
+		set => m_BehaviorDuration = value;
+	}
 
 
 
@@ -208,8 +213,7 @@ public abstract class Actor : MonoBehaviour {
 			var behaviorName = BehaviorName;
 			var position = Scheduler.GetNextBehavior(this, EnvironmentManager.TimeOfDay);
 			if (behaviorName != BehaviorName) {
-				PathPoints.Clear();
-				PathPoints.Enqueue(new(position.x, position.y));
+				NavigationManager.TryGetPath(Body.position, (Vector2)position, PathPoints);
 			}
 		}
 		if (PathPoints.TryPeek(out var point)) {
@@ -217,7 +221,7 @@ public abstract class Actor : MonoBehaviour {
 			Body.linearVelocity = GameManager.GridMultiplier * MoveVector * Speed;
 			if (Vector2.Distance(Body.position, point) < 0.1f) {
 				PathPoints.Dequeue();
-				MoveVector = default;
+				if (PathPoints.Count == 0) MoveVector = default;
 			}
 		}
 	}
