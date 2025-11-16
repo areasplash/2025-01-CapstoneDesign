@@ -128,6 +128,7 @@ public class ToastScreen : ScreenBase {
     }
 
     public override void Hide() {
+        Debug.Log("Toast Hide!");
         if (playCo != null) {
             StopCoroutine(playCo);
             playCo = null;
@@ -142,7 +143,7 @@ public class ToastScreen : ScreenBase {
         isPlaying = false;
     }
 
-
+    /*
     private void OnDisable() {
         isPlaying = false;
         SafeNotifyClose();
@@ -152,6 +153,7 @@ public class ToastScreen : ScreenBase {
         isPlaying = false;
         SafeNotifyClose();
     }
+    */
 
     private void SafeNotifyClose() {
         if (closedNotified) { return; }
@@ -235,6 +237,6 @@ public class ToastScreen : ScreenBase {
         SafeNotifyClose();
         playCo = null;
         //UIManager.CloseScreen(this);
-        gameObject.SetActive(false);
+        //gameObject.SetActive(false);
     }
 }

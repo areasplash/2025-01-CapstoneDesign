@@ -15,6 +15,7 @@ public class InventoryUICanvas : ScreenBase {
     [SerializeField] private ScrollRect scrollRect;
 
     [SerializeField] private List<TabIconEntry> tabIconsList;
+    [SerializeField] private Button backButton;
     private Dictionary<ItemType, Sprite> tabIcons;
 
     [System.Serializable]
@@ -93,15 +94,22 @@ public class InventoryUICanvas : ScreenBase {
     }
 
     private void OnEnable() {
+        backButton.onClick.AddListener(OnClickBack);
         InventoryManager.Instance.OnInventoryChanged += HandleInventoryChanged;
         //quickSlotUI.gameObject.SetActive(false);
         HandleInventoryChanged();
     }
 
     private void OnDisable() {
+        backButton.onClick.RemoveListener(OnClickBack);
         InventoryManager.Instance.OnInventoryChanged -= HandleInventoryChanged;
         //quickSlotUI.gameObject.SetActive(true);
     }
+
+    private void OnClickBack() {
+        UIManager.CloseScreen(this);
+    }
+
 
 
     private void HandleInventoryChanged() {

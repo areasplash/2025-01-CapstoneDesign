@@ -26,6 +26,7 @@ public enum Screen {
 	FadeLoading,
 	Inventory,
 	Toast,
+	Quest,
 }
 
 public static class ScreenExtensions {
@@ -44,6 +45,7 @@ public static class ScreenExtensions {
 		Screen.FadeLoading  => typeof(FadeLoadingScreen),
 		Screen.Inventory    => typeof(InventoryUICanvas),
 		Screen.Toast        => typeof(ToastScreen),
+		Screen.Quest        => typeof(QuestScreen),
 		_ => default,
 	};
 
@@ -62,6 +64,7 @@ public static class ScreenExtensions {
 		_ when screenBase is FadeLoadingScreen  => Screen.FadeLoading,
 		_ when screenBase is InventoryUICanvas  => Screen.Inventory,
 		_ when screenBase is ToastScreen        => Screen.Toast,
+		_ when screenBase is QuestScreen        => Screen.Quest,
 		_ => default,
 	};
 }
@@ -322,11 +325,18 @@ public class UIManager : MonoSingleton<UIManager> {
 		ScreenStack.Push(screenBase);
 		UpdateScreenBackground();
 		screenBase.Show();
-		ApplyInputPolicyFromStack();
+
+		//ApplyInputPolicyFromStack();
+		UIManager.Instance.DeferApplyInputPolicy();
 		return screenBase;
 	}
 
+	public static void CloseScreen(Screen screen) {
+		CloseScreen(ScreenBases[(int)screen]);
+	}
+
 	public static void CloseScreen(ScreenBase screenBase) {
+		/*
 		if (ScreenStack.TryPop(out var screen8ase)) {
 			if (screenBase == screen8ase) screen8ase.Hide();
 		}
@@ -334,8 +344,57 @@ public class UIManager : MonoSingleton<UIManager> {
 			UpdateScreenBackground();
 			screen8ase.Show();
 		}
-		ApplyInputPolicyFromStack();
+		UIManager.Instance.DeferApplyInputPolicy();
+		*/
+		if (screenBase == null) return;
+
+    	// Top이 대상이면 정상 Pop + Hide
+		if (ScreenStack.TryPeek(out var top) && ReferenceEquals(top, screenBase)) {
+			ScreenStack.Pop();
+			top.Hide();
+
+			if (ScreenStack.TryPeek(out var below)) {
+				UpdateScreenBackground();
+				below.Show();
+			} else {
+				UpdateScreenBackground();
+			}
+
+			UIManager.Instance.DeferApplyInputPolicy();
+			return;
+		}
+
+		// Top이 아니면, 스택 중간에서 제거
+		var temp = new Stack<ScreenBase>();
+		bool found = false;
+
+		while (ScreenStack.Count > 0) {
+			var s = ScreenStack.Pop();
+			if (!found && ReferenceEquals(s, screenBase)) {
+				found = true;
+				s.Hide();
+				break;
+			}
+			temp.Push(s);
+		}
+		while (temp.Count > 0) ScreenStack.Push(temp.Pop());
+
+		if (found) {
+			UpdateScreenBackground();
+			UIManager.Instance.DeferApplyInputPolicy();
+		}
 	}
+
+	public void DeferApplyInputPolicy() {
+		StartCoroutine(ApplyInputPolicyEndOfFrame());
+	}
+
+	private IEnumerator ApplyInputPolicyEndOfFrame() {
+		yield return new WaitForEndOfFrame();
+		ApplyInputPolicyFromStack();
+		// RestoreFocusIfNeeded();
+	}
+
 
 	public static void Back() {
 		if (ScreenStack.TryPeek(out var screenBase)) {
@@ -517,8 +576,9 @@ public class UIManager : MonoSingleton<UIManager> {
 
 		// 모두 끝났으면 닫기
 		if (screen) {
-			screen.gameObject.SetActive(false);
-			CloseScreen(screen);
+			//screen.gameObject.SetActive(false);
+			Debug.Log("토스트 닫기");
+			CloseScreen(Screen.Toast);
 		}
 
 		toastLoopRunning = false;
@@ -543,6 +603,22 @@ public class UIManager : MonoSingleton<UIManager> {
 	public static void BeginDialogueInput(Action<MultimodalData> onEnd = null) {
 		if (!DialogueScreen.gameObject.activeSelf) OpenScreen(Screen.Dialogue);
 		DialogueScreen.BeginDialogueInput(onEnd);
+	}
+
+	// 선택지 관련
+	public static void BeginChoices() {
+		if (!DialogueScreen.gameObject.activeSelf) { OpenScreen(Screen.Dialogue); }
+		DialogueScreen.BeginChoices();
+	}
+
+	public static void AddChoice(string text, Action onChosen = null) {
+		if (!DialogueScreen.gameObject.activeSelf) { return; }
+		DialogueScreen.AddChoice(text, onChosen);
+	}
+
+	public static void ShowChoices() {
+		if (!DialogueScreen.gameObject.activeSelf) { return; }
+		DialogueScreen.ShowChoices();
 	}
 
 

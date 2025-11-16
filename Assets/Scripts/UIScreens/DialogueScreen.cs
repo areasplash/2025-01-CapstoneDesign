@@ -1,6 +1,8 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
+using System.Collections;
 
 using TMPro;
 
@@ -45,6 +47,10 @@ public class DialogueScreen : ScreenBase {
 			if (I.InputField) I.InputText = TextField("Input Text", I.InputText);
 			if (I.InputField) I.EnableInput = Toggle("Enable Input", I.EnableInput);
 			Space();
+			LabelField("Choice Input", EditorStyles.boldLabel);
+			I.ChoiceContainer = ObjectField("Choice Container", I.ChoiceContainer);
+			I.ChoiceItemPrefab = ObjectField("Choice Item Prefab", I.ChoiceItemPrefab);
+			Space();
 			LabelField("Settings", EditorStyles.boldLabel);
 			I.TextDisplayDelay = Slider("Text Display Delay", I.TextDisplayDelay, 0.01f, 0.10f);
 			I.AutoPlay = Toggle("Auto Play", I.AutoPlay);
@@ -71,6 +77,19 @@ public class DialogueScreen : ScreenBase {
 	int m_TextIndex;
 	[SerializeField] bool m_AutoPlay;
 	[SerializeField] float m_AutoPlayDelay = 2.0f;
+
+	// 선택지 Ref
+	[SerializeField] private RectTransform m_ChoiceContainer;
+	[SerializeField] private Button m_ChoiceItemPrefab;
+
+	// 버튼 풀링
+	private readonly List<Button> choicePool = new();
+	private readonly List<Button> activeChoices = new();
+
+	private bool choiceVisible = false;
+	private bool hasPendingChoices = false;
+	private bool blockCloseThisFrame = false;
+
 
 	Queue<(string name, string text, Action onEnd)> m_DialogueQueue = new();
 
@@ -158,6 +177,16 @@ public class DialogueScreen : ScreenBase {
 		set => m_AutoPlayDelay = value;
 	}
 
+	// 선택지
+	RectTransform ChoiceContainer {
+		get => m_ChoiceContainer;
+		set => m_ChoiceContainer = value;
+	}
+	Button ChoiceItemPrefab {
+		get => m_ChoiceItemPrefab;
+		set => m_ChoiceItemPrefab = value;
+	}
+
 
 
 	Queue<(string name, string text, Action onEnd)> DialogueQueue => m_DialogueQueue;
@@ -180,8 +209,6 @@ public class DialogueScreen : ScreenBase {
 		});
 		UIManager.Selected = InputField;
 	}
-
-
 
 	/*
 	Dialogue Method Manual
@@ -228,9 +255,12 @@ public class DialogueScreen : ScreenBase {
 				NameText = name;
 				TextText = "";
 			}
+			// 즉시 타이핑 조건에 선택지 조건 추가
+			bool allowAdvance = !choiceVisible && !hasPendingChoices;
+
 			bool displayInstantly = false;
-			displayInstantly |= InputManager.GetKeyDown(KeyAction.Submit);
-			displayInstantly |= InputManager.GetKeyDown(KeyAction.Cancel);
+			displayInstantly |= allowAdvance && InputManager.GetKeyDown(KeyAction.Submit);
+			displayInstantly |= allowAdvance && InputManager.GetKeyDown(KeyAction.Cancel);
 			while (TextIndex < text.Length && (TextDisplayTimer <= 0f || displayInstantly)) {
 				char next = text[TextIndex];
 				bool flag = next == '{';
@@ -267,24 +297,115 @@ public class DialogueScreen : ScreenBase {
 					TextDisplayTimer = AutoPlayDelay;
 				}
 			}
+			
 			bool dequeueDialogue = false;
-			dequeueDialogue |= TextIndex == text.Length && InputManager.GetKeyDown(KeyAction.Submit);
-			dequeueDialogue |= TextIndex == text.Length && AutoPlay && (TextDisplayTimer <= 0f);
+			dequeueDialogue |= allowAdvance && TextIndex == text.Length && InputManager.GetKeyDown(KeyAction.Submit);
+			dequeueDialogue |= allowAdvance && TextIndex == text.Length && AutoPlay && (TextDisplayTimer <= 0f);
 			if (dequeueDialogue) {
 				TextDisplayTimer = 0f;
 				TextIndex = 0;
 				DialogueQueue.Dequeue();
 				onEnd?.Invoke();
+
+				blockCloseThisFrame = true;
+				return;
 			}
-		} else if (EnableInput) {
+		} else if (EnableInput || choiceVisible || hasPendingChoices || blockCloseThisFrame) { // 닫기 조건 추가
 			TextDisplayTimer = 0f;
+			blockCloseThisFrame = false;
 		} else {
 			UIManager.Back();
 			TextIndex = 0;
 		}
 	}
 
+	public void BeginChoices() {
+		hasPendingChoices = true;
+		blockCloseThisFrame = true;
+		// 선택지 초기화
+		ClearChoices();
+		m_ChoiceContainer.gameObject.SetActive(true);
+		choiceVisible = true;
+	}
 
+	public void AddChoice(string text, Action onChosen = null) {
+		var choice = GetChoiceItem();
+		// 텍스트 설정
+		var choiceText = choice.GetComponentInChildren<TextMeshProUGUI>();
+		if (choiceText != null) {
+			choiceText.text = text ?? string.Empty;
+		}
+		// 클릭 액션 등록
+		choice.onClick.RemoveAllListeners();
+		choice.onClick.AddListener(() => {
+			HideChoices();
+			onChosen?.Invoke();
+		});
+		// 리스트에 추가
+		activeChoices.Add(choice);
+	}
+
+	public void ShowChoices() {
+		if (!choiceVisible) { return; }
+		if (activeChoices.Count <= 0) { return; }
+		m_ChoiceContainer.gameObject.SetActive(true);
+
+		blockCloseThisFrame = true;
+
+		//EventSystem.current?SetSelectedGameObject(activeChoices[0].gameObject);
+		
+		StartCoroutine(LayoutRebuild());
+	}
+	private IEnumerator LayoutRebuild() {
+		yield return new WaitForEndOfFrame();
+		LayoutRebuilder.ForceRebuildLayoutImmediate(m_ChoiceContainer);
+	}
+
+	public void HideChoices() {
+		if (!choiceVisible) { return; }
+		choiceVisible = false;
+		hasPendingChoices = false;
+		blockCloseThisFrame = true;
+		m_ChoiceContainer.gameObject.SetActive(false);
+
+		foreach (var button in activeChoices) {
+			button.onClick.RemoveAllListeners();
+			button.gameObject.SetActive(false);
+			// 풀로 릴리즈
+			choicePool.Add(button);
+		}
+		activeChoices.Clear();
+	}
+
+	// 선택지 풀링
+	private Button GetChoiceItem() {
+		for (int i = choicePool.Count - 1; i >= 0; --i) {
+			var button = choicePool[i];
+			choicePool.RemoveAt(i);
+			button.transform.SetParent(m_ChoiceContainer, false);
+			button.gameObject.SetActive(true);
+			return button;
+		}
+
+		var inst = Instantiate(m_ChoiceItemPrefab, m_ChoiceContainer);
+		inst.gameObject.SetActive(true);
+		return inst;
+	}
+
+	private void ClearChoices() {
+		for (int i = m_ChoiceContainer.childCount - 1; i >= 0; --i) {
+			var obj = m_ChoiceContainer.GetChild(i);
+			var button = obj.GetComponent<Button>();
+			if (button != null) {
+				// 리스너 날리기
+				button.onClick.RemoveAllListeners();
+				// 풀로 릴리즈
+				button.gameObject.SetActive(false);
+				choicePool.Add(button);
+			}
+		}
+		activeChoices.Clear();
+	}
 
 	// Lifecycle
 

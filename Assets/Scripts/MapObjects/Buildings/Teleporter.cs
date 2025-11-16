@@ -21,7 +21,32 @@ public class Teleporter : MonoBehaviour, IInteractable
     public void Interact(GameObject interactor) {
         if (isLocked) {
             // 잠김 문구 출력
-            UIManager.EnqueueDialogue("", lockComment);
+
+            //UIManager.EnqueueDialogue("", lockComment);
+
+            UIManager.EnqueueDialogue("예진", "안녕 반가워~");
+            UIManager.EnqueueDialogue("예진", "어떻게 할래?", () => {
+                // 2) 마지막 대사의 onEnd에서 선택지 열기
+                UIManager.BeginChoices();
+
+                UIManager.AddChoice("선택지1", () => {
+                    UIManager.EnqueueDialogue("플레이어", "선택지1을 골랐음");
+                    UIManager.EnqueueDialogue("예진", "좋아, 그럼 시작하자!");
+                });
+
+                UIManager.AddChoice("선택지2", () => {
+                    UIManager.EnqueueDialogue("플레이어", "선택지2를 골랐음");
+
+                });
+
+                if (QuestManager.Instance.IsMissionActive("quest1", 1)) {
+                    UIManager.AddChoice("퀘스트1에 대하여", () => {
+                        UIManager.EnqueueDialogue("예진", "아, 너였구나~!");
+                    });
+                }
+
+                UIManager.ShowChoices();
+            });
             return;
         }
         if (fadeTransition) { FadeAndTeleport(interactor).Forget(); }

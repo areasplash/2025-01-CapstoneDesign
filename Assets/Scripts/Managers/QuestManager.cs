@@ -24,44 +24,27 @@ public class QuestManager : MonoSingleton<QuestManager> {
 
     // TODO 테스트 코드
     void Start() {
-        string questTitle = "테스트 퀘스트";
-        string itemId = "CarrotItem";
-        int targetCount = 5;
-
-        // 1) 퀘스트 SO 즉석 생성
-        var q = ScriptableObject.CreateInstance<QuestData>();
-        q.questId = "test_q1";
-        q.title = questTitle;
-        q.description = "런타임 생성 테스트 퀘스트";
-        q.runMode = QuestRunMode.Sequential;
-
-        // 2) 미션들 생성: Talk -> Collect -> Talk
-        var m1 = ScriptableObject.CreateInstance<TalkDialogueMissionData>();
-        m1.title = "예진이에게 말 걸기";
-        m1.descriptionWhenActive = "예진에게 말을 걸어보자";
-        m1.descriptionWhenDone = "예진과 대화를 마쳤다. 당근을 모아오라고 한다!";
-        m1.dialogueId = "q1_yejin";
-
-        var m2 = ScriptableObject.CreateInstance<CollectItemMissionData>();
-        m2.title = $"당근 {targetCount}개 모으기";
-        m2.descriptionWhenActive = "당근을 모으자";
-        m2.descriptionWhenDone = "당근을 충분히 모았다. 다시 예진에게 가보자!";
-        m2.itemId = itemId;
-        m2.targetCount = targetCount;
-
-        var m3 = ScriptableObject.CreateInstance<TalkDialogueMissionData>();
-        m3.title = "다시 예진이에게 말 걸기";
-        m3.descriptionWhenActive = "예진에게 말을 걸어보자";
-        m3.descriptionWhenDone = "예진과 대화를 마쳤다. 고생했다고 한다!";
-        m3.dialogueId = "q1_yejin2";
-
-        q.missions.Add(m1);
-        q.missions.Add(m2);
-        q.missions.Add(m3);
-
-        // 3) 시작
-        var ok = QuestManager.Instance.StartQuest(q);
-        Debug.Log($"[QuestTest] Start runtime quest -> {ok}");
+        
+        var ok = new QuestRuntimeFactory.Builder("test_q1", "테스트 퀘스트", "런타임 생성 테스트 퀘스트")
+            .Talk(
+                dialogueId: "q1_yejin",
+                title: "예진이에게 말 걸기",
+                activeDesc: "예진에게 말을 걸어보자",
+                doneDesc: "예진과 대화를 마쳤다. 당근을 모아오라고 한다!"
+            )
+            .Collect(
+                itemId: "CarrotItem", target: 4,
+                title: $"당근 4개 모으기",
+                activeDesc: "당근을 모으자",
+                doneDesc: "당근을 충분히 모았다. 다시 예진에게 가보자!"
+            )
+            .Talk(
+                dialogueId: "q1_yejin2",
+                title: "다시 예진이에게 말 걸기",
+                activeDesc: "예진에게 말을 걸어보자",
+                doneDesc: "예진과 대화를 마쳤다. 고생했다고 한다!"
+            )
+            .Start();
 
 
         // 1) 퀘스트 SO 즉석 생성
