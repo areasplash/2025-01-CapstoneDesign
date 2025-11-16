@@ -25,17 +25,17 @@ public class QuestManager : MonoSingleton<QuestManager> {
     // TODO 테스트 코드
     void Start() {
         
-        var ok = new QuestRuntimeFactory.Builder("test_q1", "테스트 퀘스트", "런타임 생성 테스트 퀘스트")
+        var ok = new QuestRuntimeFactory.Builder("test_q1", "예진이의 버스킹", "런타임 생성 테스트 퀘스트")
             .Talk(
                 dialogueId: "q1_yejin",
-                title: "예진이에게 말 걸기",
-                activeDesc: "예진에게 말을 걸어보자",
-                doneDesc: "예진과 대화를 마쳤다. 당근을 모아오라고 한다!"
+                title: "관객을 찾아 대화하기 1",
+                activeDesc: "울고있는 예진이를 발견했다! 버스킹을 했는데 관객들이 떠나갔다고, 자기는 음악에 재능이 없는 것 같다고 한다.\n진짜 별로여서 떠난 걸까? 관객을 찾아 대화해보자!\n우선 민수와 대화해보자.",
+                doneDesc: "민수와 대화를 마쳤다.\n민수는 약속이 있어서 먼저 떠난 것이었다. 오히려 예진이의 음색을 칭찬했다."
             )
             .Collect(
                 itemId: "CarrotItem", target: 4,
-                title: $"당근 4개 모으기",
-                activeDesc: "당근을 모으자",
+                title: "관객을 찾아 대화하기 2",
+                activeDesc: "다음으로 철민이와 대화해보자.",
                 doneDesc: "당근을 충분히 모았다. 다시 예진에게 가보자!"
             )
             .Talk(
@@ -46,7 +46,25 @@ public class QuestManager : MonoSingleton<QuestManager> {
             )
             .Start();
 
+        ok = new QuestRuntimeFactory.Builder("test_q2", "쓸모 없는 선물?", "런타임 생성 테스트 퀘스트")
+            .Talk(
+                dialogueId: "q1_yejin",
+                title: "관객을 찾아 대화하기 - 민수",
+                activeDesc: "울고있는 예진이를 발견했다! 버스킹을 했는데 관객들이 떠나갔다고, 자기는 음악에 재능이 없는 것 같다고 한다.\n 진짜 별로여서 떠난 걸까? 관객을 찾아 대화해보자!\n우선 민수와 대화해보자.",
+                doneDesc: "민수와 대화를 마쳤다.\n민수는 약속이 있어서 먼저 떠난 것이었다. 오히려 예진이의 음색을 칭찬했다."
+            )
+            .Start();
+        
+        ok = new QuestRuntimeFactory.Builder("test_q3", "낙담한 목수", "런타임 생성 테스트 퀘스트")
+            .Talk(
+                dialogueId: "q1_yejin",
+                title: "관객을 찾아 대화하기 - 민수",
+                activeDesc: "울고있는 예진이를 발견했다! 버스킹을 했는데 관객들이 떠나갔다고, 자기는 음악에 재능이 없는 것 같다고 한다.\n 진짜 별로여서 떠난 걸까? 관객을 찾아 대화해보자!\n우선 민수와 대화해보자.",
+                doneDesc: "민수와 대화를 마쳤다.\n민수는 약속이 있어서 먼저 떠난 것이었다. 오히려 예진이의 음색을 칭찬했다."
+            )
+            .Start();
 
+        /*
         // 1) 퀘스트 SO 즉석 생성
         var qq = ScriptableObject.CreateInstance<QuestData>();
         qq.questId = System.Guid.NewGuid().ToString();    // 임시 ID
@@ -62,7 +80,7 @@ public class QuestManager : MonoSingleton<QuestManager> {
         m11.npcId = "yejin";
         qq.missions.Add(m11);
         ok = QuestManager.Instance.StartQuest(qq);
-        
+        */
     }
 
 
