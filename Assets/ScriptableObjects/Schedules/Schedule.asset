@@ -73,7 +73,7 @@ MonoBehaviour:
     isLocationBased: 1
     location: {x: 22, y: -10, z: 0}
     locationRange: 3
-  - name: "\uCDE8\uCE68"
+  - name: Sleep
     isTimeFixed: 1
     minStartTime: 20
     maxStartTime: 24
@@ -81,9 +81,9 @@ MonoBehaviour:
     minDuration: 4
     maxDuration: 4
     isLocationBased: 1
-    location: {x: -13, y: 7, z: 0}
-    locationRange: 2
-  - name: "\uCDE8\uCE68"
+    location: {x: -12, y: 6, z: 0}
+    locationRange: 1
+  - name: Sleep
     isTimeFixed: 1
     minStartTime: 0
     maxStartTime: 0

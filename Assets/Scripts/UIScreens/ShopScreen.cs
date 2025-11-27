@@ -267,8 +267,10 @@ public sealed class ShopScreen : ScreenBase {
 				bool match = true;
 				match = match && Input.button == instance;
 				match = match && Time.time - Input.time < DoubleClickThreshold;
+				match = match && entry.price < GameManager.IntValue["Gem"];
 				match = match && 0 < entry.quantity;
 				if (match) {
+					GameManager.IntValue["Gem"] -= entry.price;
 					entry.quantity--;
 					ItemList[index] = entry;
 					/*
@@ -310,8 +312,10 @@ public sealed class ShopScreen : ScreenBase {
 				bool match = true;
 				match = match && Input.button == instance;
 				match = match && Time.time - Input.time < DoubleClickThreshold;
+				match = match && entry.price < GameManager.IntValue["Gem"];
 				match = match && 0 < entry.quantity;
 				if (match) {
+					GameManager.IntValue["Gem"] -= entry.price;
 					entry.quantity--;
 					FeatureList[index] = entry;
 					entry.action?.Invoke();

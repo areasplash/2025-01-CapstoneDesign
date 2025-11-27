@@ -70,4 +70,11 @@ public class Teleporter : MonoBehaviour, IInteractable
             await UniTask.Delay(TimeSpan.FromSeconds(0.1f));
         });
     }
+
+
+	
+	void Update() {
+		float time = EnvironmentManager.TimeOfDay % 1f;
+		isLocked = (20f / 24f) <= time || time < (6f / 24f);
+	}
 }

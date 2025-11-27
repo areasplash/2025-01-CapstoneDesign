@@ -8,6 +8,7 @@ using System.Collections.Generic;
 public enum State {
 	Idle,
 	Moving,
+	Sleep,
 }
 
 public enum Emotion {
@@ -53,11 +54,20 @@ public abstract class Actor : MonoBehaviour {
 	float m_BehaviorStartTime;
 	float m_BehaviorDuration;
 
+	SpriteRenderer m_BodyRenderer;
+	[SerializeField] HashMap<string, RuntimeAnimatorController> m_AccessoryTable = new();
+	List<(SpriteRenderer, Animator)> m_AccessoryList = new();
+	Stack<(SpriteRenderer, Animator)> m_AccessoryPool = new();
+
 
 
 	// Properties
 
-	public static List<Actor> Actors => s_Actors;
+	public static List<Actor> Actors {
+		get => s_Actors;
+	}
+
+
 
 	protected Animator BodyAnimator {
 		get => m_BodyAnimator;
@@ -74,6 +84,7 @@ public abstract class Actor : MonoBehaviour {
 			if (m_State != value) {
 				m_State = value;
 				BodyAnimator.Play(value.ToString());
+				BodyAnimator.Update(0f);
 			}
 		}
 	}
@@ -83,30 +94,39 @@ public abstract class Actor : MonoBehaviour {
 			if (m_Emotion != value) {
 				m_Emotion = value;
 				EmotionAnimator.Play(value.ToString());
+				EmotionAnimator.Update(0f);
 			}
 		}
 	}
+
 	protected List<SpriteRenderer> Renderers {
 		get {
 			if (m_Renderers == null) {
 				m_Renderers = new();
-				var stack = new Stack<Transform>();
-				stack.Push(transform);
-				while (0 < stack.Count) {
-					var body = stack.Pop();
-					if (body.TryGetComponent(out SpriteRenderer renderer)) m_Renderers.Add(renderer);
-					for (int i = 0; i < body.childCount; i++) stack.Push(body.GetChild(i));
-				}
+				AddRendererRecursive(transform, m_Renderers);
 			}
 			return m_Renderers;
 		}
 	}
+
+	static void AddRendererRecursive(Transform transform, List<SpriteRenderer> renderers) {
+		if (transform.TryGetComponent(out SpriteRenderer renderer)) renderers.Add(renderer);
+		for (int i = 0; i < transform.childCount; i++) {
+			AddRendererRecursive(transform.GetChild(i), renderers);
+		}
+	}
+
 	protected bool FlipX {
-		get => Renderers[0].flipX;
+		get => (0 < Renderers.Count) ? Renderers[0].flipX : default;
 		set {
-			if (Renderers[0].flipX != value) {
-				Renderers.ForEach(renderer => renderer.flipX = value);
-			}
+			for (int i = 0; i < Renderers.Count; i++) Renderers[i].flipX = value;
+		}
+	}
+
+	protected bool Hide {
+		get => (0 < Renderers.Count) ? !Renderers[0].enabled : default;
+		set {
+			for (int i = 0; i < Renderers.Count; i++) Renderers[i].enabled = !value;
 		}
 	}
 
@@ -117,26 +137,35 @@ public abstract class Actor : MonoBehaviour {
 		set {
 			if (m_IsSimulated != value) {
 				m_IsSimulated = value;
-				var list = new List<EventTrigger>();
-				transform.GetComponentsInChildren(true, list);
-				foreach (var trigger in list) trigger.gameObject.SetActive(value);
+				EnableTriggerRecursive(transform, value);
 			}
+		}
+	}
+
+	static void EnableTriggerRecursive(Transform transform, bool enable) {
+		if (transform.TryGetComponent(out EventTrigger trigger)) trigger.enabled = enable;
+		for (int i = 0; i < transform.childCount; i++) {
+			EnableTriggerRecursive(transform.GetChild(i), enable);
 		}
 	}
 
 
 
-	protected Rigidbody2D Body => m_Body || TryGetComponent(out m_Body) ? m_Body : null;
+	protected Rigidbody2D Body => !m_Body ?
+		m_Body = GetComponent<Rigidbody2D>() :
+		m_Body;
 
 	protected Vector2 MoveVector {
 		get => m_MoveVector;
 		set => m_MoveVector = value;
 	}
 	public float Speed {
-		get => m_Speed;
+		get           => m_Speed;
 		protected set => m_Speed = value;
 	}
-	public Queue<Vector3> PathPoints => m_PathPoints;
+	public Queue<Vector3> PathPoints {
+		get => m_PathPoints;
+	}
 
 
 
@@ -155,6 +184,22 @@ public abstract class Actor : MonoBehaviour {
 	public float BehaviorDuration {
 		get => m_BehaviorDuration;
 		set => m_BehaviorDuration = value;
+	}
+
+
+
+	SpriteRenderer BodyRenderer => !m_BodyRenderer ?
+		m_BodyRenderer = BodyAnimator.GetComponent<SpriteRenderer>() :
+		m_BodyRenderer;
+
+	protected HashMap<string, RuntimeAnimatorController> AccessoryTable {
+		get => m_AccessoryTable;
+	}
+	List<(SpriteRenderer, Animator)> AccessoryList {
+		get => m_AccessoryList;
+	}
+	Stack<(SpriteRenderer, Animator)> AccessoryPool {
+		get => m_AccessoryPool;
 	}
 
 
@@ -227,13 +272,74 @@ public abstract class Actor : MonoBehaviour {
 	}
 
 	protected virtual void Draw() {
+		bool doDefault = false;
 		switch (BehaviorName) {
-			case "":
+			case "Sleep":
+				if (PathPoints.Count == 0) {
+					if (Hide != true) Hide = true;
+					State = State.Sleep;
+				} else doDefault = true;
 				break;
 			default:
-				State = (0.1f < MoveVector.magnitude) ? State.Moving : State.Idle;
-				FlipX = (MoveVector.x != 0f) ? MoveVector.x < 0f : FlipX;
+				doDefault = true;
 				break;
+		}
+		if (doDefault) {
+			if (Hide != false) Hide = false;
+			State = (0.1f < MoveVector.magnitude) ? State.Moving : State.Idle;
+			FlipX = (MoveVector.x != 0f) ? MoveVector.x < 0f : FlipX;
+		}
+	}
+
+
+
+	protected bool HasAccessory(string name) {
+		foreach (var instance in AccessoryList) {
+			if (instance.Item1.gameObject.name == name) return true;
+		}
+		return false;
+	}
+
+	protected void AddAccessory(string name) {
+		if (AccessoryTable.TryGetValue(name, out var controller)) {
+			if (!AccessoryPool.TryPop(out var instance)) {
+				var gameObject = new GameObject();
+				gameObject.transform.SetParent(BodyAnimator.transform.parent);
+				gameObject.transform.localPosition = Vector3.zero;
+				instance.Item1 = gameObject.AddComponent<SpriteRenderer>();
+				instance.Item1.spriteSortPoint = SpriteSortPoint.Pivot;
+				instance.Item1.sortingLayerID = BodyRenderer.sortingLayerID;
+				instance.Item2 = gameObject.AddComponent<Animator>();
+			}
+			instance.Item2.runtimeAnimatorController = controller;
+			instance.Item1.gameObject.name = name;
+			instance.Item1.gameObject.SetActive(true);
+			AccessoryList.Add(instance);
+			Renderers.Add(instance.Item1);
+		}
+	}
+
+	protected void RemoveAccessory(string name) {
+		foreach (var instance in AccessoryList) {
+			if (instance.Item1.gameObject.name == name) {
+				instance.Item1.gameObject.name = "Accessory";
+				instance.Item1.gameObject.SetActive(false);
+				AccessoryPool.Push(instance);
+				AccessoryList.Remove(instance);
+				Renderers.Remove(instance.Item1);
+				break;
+			}
+		}
+	}
+
+	void UpdateAccessory() {
+		if (AccessoryList.Count == 0) return;
+		int sortingOrder = BodyRenderer.sortingOrder;
+		float deltaTime = BodyAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime;
+		for (int i = 0; i < AccessoryList.Count; i++) {
+			var instance = AccessoryList[i];
+			instance.Item1.sortingOrder = sortingOrder + i + 1;
+			instance.Item2.Play(State.ToString(), 0, deltaTime);
 		}
 	}
 
@@ -259,5 +365,9 @@ public abstract class Actor : MonoBehaviour {
 				Draw();
 				break;
 		}
+	}
+
+	void LateUpdate() {
+		UpdateAccessory();
 	}
 }
