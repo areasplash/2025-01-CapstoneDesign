@@ -605,6 +605,31 @@ public class UIManager : MonoSingleton<UIManager> {
 		DialogueScreen.BeginDialogueInput(onEnd);
 	}
 
+	private int dialogueHoldCount = 0;
+    public static bool IsDialogueHeld => Instance && Instance.dialogueHoldCount > 0;
+
+	public static void HoldDialogue() {
+		Debug.Log("Hold!! ");
+        if (Instance) { Instance.dialogueHoldCount++; }
+    }
+
+    public static void ReleaseDialogue() {
+		Debug.Log("ReleaseDialogue");
+        if (Instance && Instance.dialogueHoldCount > 0) { Instance.dialogueHoldCount--; }
+    }
+
+    // 프레임 대기 후에 풀어주기 (깜빡임 방지)
+    public static void ReleaseDialogueDeferred() {
+		Debug.Log("Try ReleaseDialogueDeferred");
+        if (!Instance) { return; }
+        Instance.StartCoroutine(ReleaseDialogueCo());
+    }
+    private static IEnumerator ReleaseDialogueCo() {
+		Debug.Log("Try ReleaseDialogueCo");
+        yield return null;
+        ReleaseDialogue();
+    }
+
 	// 선택지 관련
 	public static void BeginChoices() {
 		if (!DialogueScreen.gameObject.activeSelf) { OpenScreen(Screen.Dialogue); }

@@ -93,8 +93,6 @@ public class DialogueScreen : ScreenBase {
 
 	Queue<(string name, string text, Action onEnd)> m_DialogueQueue = new();
 
-
-
 	// Properties
 
 	public override bool IsPrimary => false;
@@ -248,19 +246,33 @@ public class DialogueScreen : ScreenBase {
 
 	void UpdateDialogue() {
 		TextDisplayTimer -= Time.deltaTime;
+
 		if (DialogueQueue.TryPeek(out var value)) {
 			var (name, text, onEnd) = value;
+
+			if (TextIndex > text.Length) TextIndex = 0;
+
 			bool initialize = TextIndex == 0;
 			if (initialize) {
 				NameText = name;
-				TextText = "";
+				if (TextText != "") {
+					TextText = "";
+				}
 			}
 			// 즉시 타이핑 조건에 선택지 조건 추가
+			bool wasAlreadyFinished = TextIndex >= text.Length;
 			bool allowAdvance = !choiceVisible && !hasPendingChoices;
 
+			// 입력을 미리 저장
+			bool inputSubmit = allowAdvance && InputManager.GetKeyDown(KeyAction.Submit);
+            bool inputCancel = allowAdvance && InputManager.GetKeyDown(KeyAction.Cancel);
+
 			bool displayInstantly = false;
-			displayInstantly |= allowAdvance && InputManager.GetKeyDown(KeyAction.Submit);
-			displayInstantly |= allowAdvance && InputManager.GetKeyDown(KeyAction.Cancel);
+			//displayInstantly |= allowAdvance && InputManager.GetKeyDown(KeyAction.Submit);
+			//displayInstantly |= allowAdvance && InputManager.GetKeyDown(KeyAction.Cancel);
+			displayInstantly |= inputSubmit;
+            displayInstantly |= inputCancel;
+
 			while (TextIndex < text.Length && (TextDisplayTimer <= 0f || displayInstantly)) {
 				char next = text[TextIndex];
 				bool flag = next == '{';
@@ -299,7 +311,8 @@ public class DialogueScreen : ScreenBase {
 			}
 			
 			bool dequeueDialogue = false;
-			dequeueDialogue |= allowAdvance && TextIndex == text.Length && InputManager.GetKeyDown(KeyAction.Submit);
+			dequeueDialogue |= inputSubmit && wasAlreadyFinished;
+			//dequeueDialogue |= allowAdvance && TextIndex == text.Length && InputManager.GetKeyDown(KeyAction.Submit);
 			dequeueDialogue |= allowAdvance && TextIndex == text.Length && AutoPlay && (TextDisplayTimer <= 0f);
 			if (dequeueDialogue) {
 				TextDisplayTimer = 0f;
@@ -310,9 +323,11 @@ public class DialogueScreen : ScreenBase {
 				blockCloseThisFrame = true;
 				return;
 			}
-		} else if (EnableInput || choiceVisible || hasPendingChoices || blockCloseThisFrame) { // 닫기 조건 추가
+		} else if (EnableInput || choiceVisible || hasPendingChoices || blockCloseThisFrame || UIManager.IsDialogueHeld) { // 닫기 조건 추가 
 			TextDisplayTimer = 0f;
 			blockCloseThisFrame = false;
+
+			TextIndex = 0;
 		} else {
 			UIManager.Back();
 			TextIndex = 0;
