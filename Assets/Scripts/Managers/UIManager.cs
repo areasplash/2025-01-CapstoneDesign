@@ -27,6 +27,7 @@ public enum Screen {
 	Inventory,
 	Toast,
 	Quest,
+	Diary,
 }
 
 public static class ScreenExtensions {
@@ -46,6 +47,7 @@ public static class ScreenExtensions {
 		Screen.Inventory    => typeof(InventoryUICanvas),
 		Screen.Toast        => typeof(ToastScreen),
 		Screen.Quest        => typeof(QuestScreen),
+		Screen.Diary        => typeof(DiaryScreen),
 		_ => default,
 	};
 
@@ -65,6 +67,7 @@ public static class ScreenExtensions {
 		_ when screenBase is InventoryUICanvas  => Screen.Inventory,
 		_ when screenBase is ToastScreen        => Screen.Toast,
 		_ when screenBase is QuestScreen        => Screen.Quest,
+		_ when screenBase is DiaryScreen        => Screen.Diary,
 		_ => default,
 	};
 }
