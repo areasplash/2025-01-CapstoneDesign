@@ -310,7 +310,12 @@ static class ChoiceState {
         SelectedAddNode = node;
     }
 
-    public static bool HasSelection => SelectedIndex >= 0 && SelectedAddNode != null;
+	public static void SelectFromCode(int idx) {
+        SelectedIndex = idx;
+        SelectedAddNode = null;
+    }
+
+    public static bool HasSelection => SelectedIndex >= 0; // SelectedAddNode != null
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

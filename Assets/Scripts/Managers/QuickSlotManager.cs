@@ -86,10 +86,14 @@ public class QuickSlotManager : MonoSingleton<QuickSlotManager> {
     }
 
     private void OnEnable() {
-        InventoryManager.Instance.OnInventoryChanged += RemapIfNeeded;
+        if(InventoryManager.Instance != null) {
+            InventoryManager.Instance.OnInventoryChanged += RemapIfNeeded;
+        }
     }
     private void OnDisable() {
-        InventoryManager.Instance.OnInventoryChanged -= RemapIfNeeded;
+        if(InventoryManager.Instance != null) {
+            InventoryManager.Instance.OnInventoryChanged -= RemapIfNeeded;
+        }
     }
 
     private void RemapIfNeeded() {

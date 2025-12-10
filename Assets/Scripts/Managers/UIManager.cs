@@ -28,6 +28,7 @@ public enum Screen {
 	Toast,
 	Quest,
 	Diary,
+	Evidence,
 }
 
 public static class ScreenExtensions {
@@ -48,6 +49,7 @@ public static class ScreenExtensions {
 		Screen.Toast        => typeof(ToastScreen),
 		Screen.Quest        => typeof(QuestScreen),
 		Screen.Diary        => typeof(DiaryScreen),
+		Screen.Evidence     => typeof(EvidenceScreen),
 		_ => default,
 	};
 
@@ -68,6 +70,7 @@ public static class ScreenExtensions {
 		_ when screenBase is ToastScreen        => Screen.Toast,
 		_ when screenBase is QuestScreen        => Screen.Quest,
 		_ when screenBase is DiaryScreen        => Screen.Diary,
+		_ when screenBase is EvidenceScreen     => Screen.Evidence,
 		_ => default,
 	};
 }
@@ -603,13 +606,25 @@ public class UIManager : MonoSingleton<UIManager> {
 		DialogueScreen.EnqueueDialogue(name, text, onEnd);
 	}
 
+	public static void EnqueueDialogue(string name, string text, string bgSpriteNameOrNull, Action onEnd = null) {
+		if (!DialogueScreen.gameObject.activeSelf) OpenScreen(Screen.Dialogue);
+		DialogueScreen.EnqueueDialogue(name, text, bgSpriteNameOrNull, onEnd);
+	}
+
 	public static void BeginDialogueInput(Action<MultimodalData> onEnd = null) {
 		if (!DialogueScreen.gameObject.activeSelf) OpenScreen(Screen.Dialogue);
 		DialogueScreen.BeginDialogueInput(onEnd);
 	}
 
+	public static void SetDialogueOverlayTransparentMode(bool on) {
+        if (DialogueScreen) DialogueScreen.SetOverlayTransparentMode(on);
+    }
+
 	private int dialogueHoldCount = 0;
     public static bool IsDialogueHeld => Instance && Instance.dialogueHoldCount > 0;
+	public static bool HasPendingDialogue => DialogueScreen && DialogueScreen.DialogueQueueCount > 0;
+	public static bool IsChoiceOpen => DialogueScreen && DialogueScreen.IsChoiceOpen;
+	public static bool IsDialogueInput => DialogueScreen && DialogueScreen.IsInputActive;
 
 	public static void HoldDialogue() {
 		Debug.Log("Hold!! ");
@@ -649,6 +664,20 @@ public class UIManager : MonoSingleton<UIManager> {
 		DialogueScreen.ShowChoices();
 	}
 
+	// 감정탐정 관련
+	static EvidenceScreen EvidenceScreen {
+		get => (EvidenceScreen)ScreenBases[(int)Screen.Evidence];
+	}
+
+	public static EvidenceScreen OpenEvidence(DetectiveScenarioSO so,
+                                    Action<int> onFound,
+                                    Action onClosed,
+                                    Func<bool> shouldAutoClose)
+    {
+        var ev = (EvidenceScreen)UIManager.OpenScreen(Screen.Evidence);
+        ev.Open(so, onFound, onClosed, shouldAutoClose);
+		return ev;
+    }
 
 
 	// Game Screen Methods

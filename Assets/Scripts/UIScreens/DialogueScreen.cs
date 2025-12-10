@@ -42,6 +42,11 @@ public class DialogueScreen : ScreenBase {
 			I.TextTextUGUI  = ObjectField("Text Text UGUI", I.TextTextUGUI);
 			if (I.TextTextUGUI) I.TextText = TextArea("Text Text", I.TextText);
 			Space();
+			LabelField("Background", EditorStyles.boldLabel);
+			I.m_BackgroundImageFront = ObjectField("Background Image Front", I.m_BackgroundImageFront);
+			I.m_BackgroundImageBack = ObjectField("Background Image Back", I.m_BackgroundImageBack);
+			I.m_BackgroundGroup = ObjectField("Background Group", I.m_BackgroundGroup);
+			Space();
 			LabelField("Player Input", EditorStyles.boldLabel);
 			I.InputField = ObjectField("Input Field", I.InputField);
 			if (I.InputField) I.InputText = TextField("Input Text", I.InputText);
@@ -71,6 +76,14 @@ public class DialogueScreen : ScreenBase {
 	[SerializeField] RectTransform m_TextTransform;
 	[SerializeField] TextMeshProUGUI m_TextTextUGUI;
 	[SerializeField] TMP_InputField m_InputField;
+	[SerializeField] Image m_BackgroundImageBack;
+	[SerializeField] Image m_BackgroundImageFront;
+	[SerializeField] CanvasGroup m_BackgroundGroup;
+	private const float m_BackgroundFadeDuration = 0.5f;
+	private string m_CurrentBGKey = ""; 
+	private Coroutine m_BGGroupCo = null;
+	private Coroutine m_BGCrossCo = null;
+	float GroupAlpha => m_BackgroundGroup ? m_BackgroundGroup.alpha : 0f;
 
 	[SerializeField] float m_TextDisplayDelay = 0.04f;
 	float m_TextDisplayTimer;
@@ -92,14 +105,28 @@ public class DialogueScreen : ScreenBase {
 
 
 	Queue<(string name, string text, Action onEnd)> m_DialogueQueue = new();
+	// 배경 큐
+	private readonly Queue<string> m_DialogueBGQueue = new();
 
 	// Properties
 
 	public override bool IsPrimary => false;
-	public override bool IsOverlay => false;
-	public override BackgroundMode BackgroundMode => BackgroundMode.Scene;
+	//public override bool IsOverlay => false;
+	//public override BackgroundMode BackgroundMode => BackgroundMode.Scene;
 
+	public int DialogueQueueCount => m_DialogueQueue.Count;
+	public bool IsChoiceOpen => choiceVisible || hasPendingChoices;
+	public bool IsInputActive => EnableInput;
 
+	private bool overlayTransparentMode = false;
+
+    // 외부에서 켜고 끄기
+    public void SetOverlayTransparentMode(bool on) {
+        overlayTransparentMode = on;
+    }
+
+    public override bool IsOverlay => overlayTransparentMode ? true : base.IsOverlay;
+    public override BackgroundMode BackgroundMode => overlayTransparentMode ? BackgroundMode.Preserve : BackgroundMode.Scene;
 
 	RectTransform NameTransform {
 		get => m_NameTransform;
@@ -141,6 +168,19 @@ public class DialogueScreen : ScreenBase {
 		get => InputField.text;
 		set => InputField.text = value;
 	}
+	Image BackgroundImageBack {
+		get => m_BackgroundImageBack;
+		set => m_BackgroundImageBack = value;
+	}
+	Image BackgroundImageFront {
+		get => m_BackgroundImageFront;
+		set => m_BackgroundImageFront = value;
+	}
+	CanvasGroup BackgroundGroup {
+		get => m_BackgroundGroup;
+		set => m_BackgroundGroup = value;
+	}
+
 	bool EnableInput {
 		get => InputField.gameObject.activeSelf;
 		set {
@@ -194,7 +234,12 @@ public class DialogueScreen : ScreenBase {
 	// Methods
 
 	public void EnqueueDialogue(string name, string text, Action onEnd = null) {
-		DialogueQueue.Enqueue((name, text, onEnd));
+		//DialogueQueue.Enqueue((name, text, onEnd));
+		EnqueueDialogue(name, text, bgSpriteNameOrNull: null, onEnd: onEnd);
+	}
+	public void EnqueueDialogue(string name, string text, string bgSpriteNameOrNull, Action onEnd = null) {
+		m_DialogueQueue.Enqueue((name, text, onEnd));
+		m_DialogueBGQueue.Enqueue(bgSpriteNameOrNull); 
 	}
 
 	public void BeginDialogueInput(Action<MultimodalData> onEnd = null) {
@@ -250,13 +295,18 @@ public class DialogueScreen : ScreenBase {
 		if (DialogueQueue.TryPeek(out var value)) {
 			var (name, text, onEnd) = value;
 
-			if (TextIndex > text.Length) TextIndex = 0;
+			if (TextIndex > text.Length) { TextIndex = 0; }
 
 			bool initialize = TextIndex == 0;
 			if (initialize) {
 				NameText = name;
 				if (TextText != "") {
 					TextText = "";
+				}
+
+				// 배경 적용
+				if (m_DialogueBGQueue.TryPeek(out var bgCmd) && bgCmd != null) {
+					SetBackground(bgCmd); // ""면 클리어, 문자열이면 교체
 				}
 			}
 			// 즉시 타이핑 조건에 선택지 조건 추가
@@ -298,6 +348,12 @@ public class DialogueScreen : ScreenBase {
 							if (isArgsValid) TextText +=
 								GameManager.StringValue[args[0]];
 							break;
+						case "BG":
+							// {BG(SpriteName)}
+							// {BG()} 로 숨기기
+							string key = (isArgsValid ? args[0].Trim() : "");
+							SetBackground(key);
+							break;
 					}
 					TextIndex = end;
 				} else {
@@ -317,7 +373,11 @@ public class DialogueScreen : ScreenBase {
 			if (dequeueDialogue) {
 				TextDisplayTimer = 0f;
 				TextIndex = 0;
+				// 디큐 (배경 이미지도 함께)
 				DialogueQueue.Dequeue();
+				if (m_DialogueBGQueue.Count > 0) {
+					m_DialogueBGQueue.Dequeue();
+				}
 				onEnd?.Invoke();
 
 				blockCloseThisFrame = true;
@@ -422,6 +482,169 @@ public class DialogueScreen : ScreenBase {
 		activeChoices.Clear();
 	}
 
+	// 배경 이미지 관련
+	public void SetBackground(string spriteName) {
+		if (!m_BackgroundImageBack || !m_BackgroundImageFront || !m_BackgroundGroup) return;
+
+		// 유지
+		if (spriteName == null) {
+			return;
+		}
+
+		// 클리어
+		if (spriteName.Length == 0) {
+			StopBGCrossAnim();
+			NormalizeBGState();
+			StopBGGroupAnim();
+			m_BGGroupCo = StartCoroutine(BGGroupFadeTo(0f, m_BackgroundFadeDuration, () => {
+				m_BackgroundImageBack.sprite = null;
+				m_BackgroundImageFront.sprite = null;
+				SetImageAlpha(m_BackgroundImageFront, 0f);
+				m_CurrentBGKey = "";
+			}));
+			return;
+		}
+
+		// 스프라이트 로드
+		var next = AtlasManager.Instance ? AtlasManager.Instance.Get("Dialogue", spriteName) : null;
+		if (!next) {
+			// 못 찾으면 클리어
+			SetBackground("");
+			return;
+		}
+
+		bool hasCurrent = !string.IsNullOrEmpty(m_CurrentBGKey) && m_BackgroundImageBack.sprite != null && GroupAlpha > 0.001f;
+
+		// 없다가 생김
+		if (!hasCurrent) {
+			StopBGCrossAnim();
+			NormalizeBGState();
+			m_BackgroundImageBack.sprite = next;
+			m_CurrentBGKey = spriteName;
+
+			StopBGGroupAnim();
+			m_BGGroupCo = StartCoroutine(BGGroupFadeTo(1f, m_BackgroundFadeDuration));
+			return;
+		}
+
+		// 같은 배경이면 유지
+		if (m_CurrentBGKey == spriteName && m_BackgroundImageBack.sprite == next) {
+			return;
+		}
+
+		// 다른 배경이면 교차 페이드
+		StopBGCrossAnim();
+		m_BGCrossCo = StartCoroutine(BGCrossfadeCo(next, spriteName));
+	}
+
+	IEnumerator BGGroupFadeTo(float target, float duration, Action onComplete = null) {
+		if (!m_BackgroundGroup) {
+			yield break;
+		}
+
+		float start = m_BackgroundGroup.alpha;
+
+		if (Mathf.Approximately(start, target) || duration <= 0f) {
+			m_BackgroundGroup.alpha = target;
+			onComplete?.Invoke();
+			yield break;
+		}
+
+		float t = 0f;
+
+		while (t < duration) {
+			t += Time.unscaledDeltaTime;
+			float k = Mathf.Clamp01(t / duration);
+			m_BackgroundGroup.alpha = Mathf.Lerp(start, target, k);
+			yield return null;
+		}
+		m_BackgroundGroup.alpha = target;
+		onComplete?.Invoke();
+	}
+
+	IEnumerator BGCrossfadeCo(Sprite nextSprite, string nextKey) {
+		// Front를 0으로
+		SetImageAlpha(m_BackgroundImageFront, 0f);
+
+		// Front 스프라이트 교체
+		m_BackgroundImageFront.sprite = nextSprite;
+
+		// Front 0 -> 1
+		float t = 0f, dur = Mathf.Max(0.01f, m_BackgroundFadeDuration * 2f);
+		while (t < dur) {
+			t += Time.unscaledDeltaTime;
+			float k = Mathf.Clamp01(t / dur);
+			SetImageAlpha(m_BackgroundImageFront, k);
+
+			// 0.995 지점에서 Back 동기화
+			//if (k >= 0.995f && m_BackgroundImageBack.sprite != m_BackgroundImageFront.sprite) {
+			//	m_BackgroundImageBack.sprite = m_BackgroundImageFront.sprite;
+			//}
+			yield return null;
+		}
+		SetImageAlpha(m_BackgroundImageFront, 1f);
+		m_BackgroundImageBack.sprite = m_BackgroundImageFront.sprite;
+
+		// 다음 교체 대비
+		SetImageAlpha(m_BackgroundImageFront, 0f);
+
+		// 현재 키 갱신
+		m_CurrentBGKey = nextKey;
+		m_BGCrossCo = null;
+	}
+
+	private void ResetBackgroundHidden() {
+        // 코루틴 중지
+        StopBGGroupAnim();
+        StopBGCrossAnim();
+
+        // Back/Front 동기화 강제
+        NormalizeBGState();
+
+        // 알파 0으로 즉시 세팅 및 스프라이트 제거
+        if (m_BackgroundGroup) m_BackgroundGroup.alpha = 0f;
+        if (m_BackgroundImageFront) {
+            SetImageAlpha(m_BackgroundImageFront, 0f);
+            m_BackgroundImageFront.sprite = null;
+        }
+        if (m_BackgroundImageBack) {
+            m_BackgroundImageBack.sprite = null;
+        }
+        m_CurrentBGKey = "";
+    }
+
+	// 배경 관련 유틸
+	void SetImageAlpha(Image img, float a) {
+		if (!img) { return; }
+		var c = img.color;
+		c.a = a;
+		img.color = c;
+	}
+
+	void StopBGGroupAnim() {
+		if (m_BGGroupCo != null) {
+			StopCoroutine(m_BGGroupCo);
+			m_BGGroupCo = null;
+		}
+	}
+	void StopBGCrossAnim() {
+		if (m_BGCrossCo != null) {
+			StopCoroutine(m_BGCrossCo);
+			m_BGCrossCo = null;
+		}
+	}
+
+	// 강제 정리: 중간에 끊겨도 Back/Front 일치 + Front 투명
+	void NormalizeBGState() {
+		if (!m_BackgroundImageBack || !m_BackgroundImageFront) { return; }
+		if (m_BackgroundImageFront.sprite != null) {
+			m_BackgroundImageBack.sprite = m_BackgroundImageFront.sprite;
+		}
+		SetImageAlpha(m_BackgroundImageFront, 0f);
+	}
+
+	public void ClearBackground() => SetBackground(null);
+
 	// Lifecycle
 
 	void Start() {
@@ -431,4 +654,19 @@ public class DialogueScreen : ScreenBase {
 	void LateUpdate() {
 		UpdateDialogue();
 	}
+
+	public override void Show() {
+        base.Show();
+        ResetBackgroundHidden();
+    }
+
+    public override void Hide() {
+        ResetBackgroundHidden();
+        base.Hide();
+    }
+
+    public override void Back() {
+        ResetBackgroundHidden();
+        base.Back();
+    }
 }
