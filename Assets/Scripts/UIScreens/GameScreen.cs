@@ -327,6 +327,11 @@ public class GameScreen : ScreenBase {
 			InteractableNameUGUI.rectTransform.position = namePos;
 			InteractableNameUGUI.text = interactableObject.name switch {
 				"Yejin"  => "예진",
+				"NPC1" => "강민",
+				"NPC2" => "다솔",
+				"NPC3" => "동수",
+				"NPC4" => "은지",
+				"Ghost" => "유령",
 				"Minsu"  => "민수",
 				"People" => "사람들",
 				_ => interactableObject.name,
@@ -338,6 +343,7 @@ public class GameScreen : ScreenBase {
 				InteractionType.Trade => "거래하기",
 				InteractionType.BuildingEntry => "입장하기",
 				InteractionType.BuildingExit => "퇴장하기",
+				InteractionType.Fishing => "낚시하기",
 				_ => "상호작용",
 			};
 		} else {

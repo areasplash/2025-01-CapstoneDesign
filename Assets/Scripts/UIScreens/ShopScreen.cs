@@ -252,7 +252,7 @@ public sealed class ShopScreen : ScreenBase {
 			transform.anchoredPosition = position;
 			var entry = ItemList[index];
 			var name = entry.item.ItemName;
-			var text = "아이템 설명";
+			var text = entry.item.ItemDescription;
 			var icon = entry.item.ItemIconSprite;
 			if (TryGetIconImage(instance, out var iconImage)) iconImage.sprite = icon;
 			if (TryGetNameText(instance, out var nameText)) nameText.text = name;
@@ -277,7 +277,7 @@ public sealed class ShopScreen : ScreenBase {
 					구매 성공 처리
 					- ItemData -> ItemBase 변환 추가 필요
 					*/
-					//OnBuyCompleted(itemBase);
+					OnBuyCompleted(entry.item);
 					RefreshDetailPanel(name, text, icon, entry.price, entry.quantity);
 					RefreshListPanelForBuy();
 					Input = default;
@@ -440,16 +440,19 @@ public sealed class ShopScreen : ScreenBase {
 	아이템 구매/판매 완료 콜백 함수
 	*/
 
-	void OnBuyCompleted(ItemBase itemBase) {
+	void OnBuyCompleted(ItemData itemData) {
 		/*
 		인벤토리 내 아이템 +1 로직 추가 필요
 		*/
+		var itemBase = ItemDatabase.Instance.CreateItem(itemData, 1);
+		InventoryManager.Instance.AddItem(itemBase);
 	}
 
 	void OnSellCompleted(ItemBase itemBase) {
 		/*
 		인벤토리 내 아이템 -1 로직 추가 필요
 		*/
+		InventoryManager.Instance.RemoveItem(itemBase);
 	}
 
 

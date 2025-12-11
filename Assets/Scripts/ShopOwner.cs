@@ -12,7 +12,7 @@ using UnityEditor;
 // Shop Owner
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-public class ShopOwner : MonoBehaviour, IInteractable {
+public class ShopOwner : MonoBehaviour {
 
 	// Editor
 
@@ -126,7 +126,7 @@ public class ShopOwner : MonoBehaviour, IInteractable {
 
 	// Methods
 
-	public void Interact(GameObject interactor) {
+	public void OpenShop() {
 		UIManager.ShopItemList = ItemList;
 		UIManager.ShopFeatureList = FeatureList;
 		UIManager.OpenScreen(Screen.Shop);

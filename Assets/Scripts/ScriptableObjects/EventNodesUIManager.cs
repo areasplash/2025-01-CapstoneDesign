@@ -462,3 +462,60 @@ public sealed class ShowChoicesEvent : EventBase {
 }
 
 
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// UIManager | Show Gem Collect Message
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[NodeMenu("UI Manager/Show Gem Collect Message")]
+public sealed class ShowGemCollectMessageEvent : EventBase {
+
+	// Editor
+
+	#if UNITY_EDITOR
+	public sealed class ShowGemCollectMessageEventNode : EventNodeBase {
+		ShowGemCollectMessageEvent I => target as ShowGemCollectMessageEvent;
+
+		public ShowGemCollectMessageEventNode() : base() {
+			mainContainer.style.width = Node1U;
+		}
+
+		public override void ConstructData() {
+			var message = TextField(I.Message, value => I.Message = value);
+			message.textEdition.placeholder = "Message";
+			message.multiline = true;
+			mainContainer.Add(message);
+		}
+	}
+	#endif
+
+
+
+	// Fields
+
+	[SerializeField] string m_Message = string.Empty;
+
+
+
+	// Properties
+
+	public string Message {
+		get => m_Message;
+		set => m_Message = value;
+	}
+
+
+
+	// Methods
+
+	public override void CopyFrom(EventBase eventBase) {
+		base.CopyFrom(eventBase);
+		if (eventBase is ShowGemCollectMessageEvent showGemCollectMessageEvent) {
+			Message = showGemCollectMessageEvent.Message;
+		}
+	}
+
+	public override void End() {
+		UIManager.ShowGemCollectMessage(Message);
+	}
+}

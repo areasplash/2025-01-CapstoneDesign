@@ -9,7 +9,15 @@ public enum State {
 	Idle,
 	Moving,
 	Sleep,
-}
+	Fishing_Cast,
+	Fishing_Wait,
+	Fishing_Bite,
+	Fishing_Struggle,
+	Fishing_Reel,
+	Fishing_Carp,
+	Fishing_Mudfish,
+	Fishing_Crawfish,
+};
 
 public enum Emotion {
 	None,
@@ -50,6 +58,7 @@ public abstract class Actor : MonoBehaviour {
 	Queue<Vector3> m_PathPoints = new();
 
 	[SerializeField] Scheduler m_Scheduler;
+	bool m_UseScheduler = true;
 	string m_BehaviorName;
 	float m_BehaviorStartTime;
 	float m_BehaviorDuration;
@@ -173,6 +182,10 @@ public abstract class Actor : MonoBehaviour {
 		get => m_Scheduler;
 		set => m_Scheduler = value;
 	}
+	protected bool UseScheduler {
+		get => m_UseScheduler;
+		set => m_UseScheduler = value;
+	}
 	public string BehaviorName {
 		get => m_BehaviorName;
 		set => m_BehaviorName = value;
@@ -254,11 +267,13 @@ public abstract class Actor : MonoBehaviour {
 	protected virtual void Simulate() { }
 
 	protected virtual void Act() {
-		if (Scheduler) {
+		if (Scheduler && UseScheduler) {
 			var behaviorName = BehaviorName;
-			var position = Scheduler.GetNextBehavior(this, EnvironmentManager.TimeOfDay);
+			var position = Scheduler.GetNextBehavior(this);
 			if (behaviorName != BehaviorName) {
-				NavigationManager.TryGetPath(Body.position, (Vector2)position, PathPoints);
+				if (!NavigationManager.TryGetPath(Body.position, (Vector2)position, PathPoints)) {
+					BehaviorName = null;
+				}
 			}
 		}
 		if (PathPoints.TryPeek(out var point)) {

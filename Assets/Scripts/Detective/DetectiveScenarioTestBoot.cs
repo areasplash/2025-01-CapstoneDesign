@@ -31,7 +31,7 @@ public class DetectiveScenarioTestBoot : MonoBehaviour
         */
     }
 
-    void Run()
+    public void Run()
     {
         if (!runner)
         {
