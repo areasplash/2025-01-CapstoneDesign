@@ -444,6 +444,7 @@ public sealed class ShopScreen : ScreenBase {
 		/*
 		인벤토리 내 아이템 +1 로직 추가 필요
 		*/
+		AudioManager.PlaySoundFX(Audio.Shop, 0.3f);
 		var itemBase = ItemDatabase.Instance.CreateItem(itemData, 1);
 		InventoryManager.Instance.AddItem(itemBase);
 	}
@@ -452,6 +453,7 @@ public sealed class ShopScreen : ScreenBase {
 		/*
 		인벤토리 내 아이템 -1 로직 추가 필요
 		*/
+		AudioManager.PlaySoundFX(Audio.Shop, 0.3f);
 		InventoryManager.Instance.RemoveItem(itemBase);
 	}
 

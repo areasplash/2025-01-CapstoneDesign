@@ -719,8 +719,14 @@ public class UIManager : MonoSingleton<UIManager> {
 		}
 	}
 
+	Selectable prevSelected;
+
 	void LateUpdate() {
 		UpdateScreenResolution();
+		if (prevSelected != Selected && Selected != null) {
+			prevSelected = Selected;
+			AudioManager.PlaySoundFX(Audio.Click, 0.8f);
+		}
 	}
 
 	protected override void OnDestroy() {

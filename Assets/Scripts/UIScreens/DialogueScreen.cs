@@ -324,6 +324,7 @@ public class DialogueScreen : ScreenBase {
             displayInstantly |= inputCancel;
 
 			while (TextIndex < text.Length && (TextDisplayTimer <= 0f || displayInstantly)) {
+				AudioManager.PlaySoundFX(Audio.Dialogue, 0.2f);
 				char next = text[TextIndex];
 				bool flag = next == '{';
 				if (flag && TryGetFunction(text, TextIndex, out int end, out var func, out var args)) {
