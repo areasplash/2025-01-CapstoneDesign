@@ -17,6 +17,7 @@ public class FarmPlotInteractable : MonoBehaviour, IInteractable
     }
 
     public void Interact(GameObject interactor) {
+		AudioManager.PlaySoundFX(Audio.Farming, 0.8f);
         Debug.Log("interact!");
         if (parentPlot.CurrentPlant == null) {
             SeedTool seed = (SeedTool)playerToolManager?.EquippedTool;
