@@ -103,6 +103,8 @@ public class Player : Actor {
 			}
 		}
 
+
+
 		/*Accessory Test Code*/
 		if (InputManager.GetKeyDown(KeyAction.Jump)) {
 			var keys = new List<string>(AccessoryTable.Keys);
@@ -117,6 +119,13 @@ public class Player : Actor {
 		base.Act();
 		if (PathPoints.Count == 0) {
 			Body.linearVelocity = GameManager.GridMultiplier * MoveVector * Speed;
+		}
+	}
+
+	protected override void Draw() {
+		if (State == State.Idle || State == State.Moving) {
+			State = (0.1f < MoveVector.magnitude) ? State.Moving : State.Idle;
+			FlipX = (MoveVector.x != 0f) ? MoveVector.x < 0f : FlipX;
 		}
 	}
 }

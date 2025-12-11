@@ -9,6 +9,7 @@ public enum InteractionType {
 	Trade,
 	BuildingEntry,
 	BuildingExit,
+	Fishing,
 }
 
 

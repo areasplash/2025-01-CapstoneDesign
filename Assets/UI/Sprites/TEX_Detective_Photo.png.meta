@@ -147,7 +147,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      TEX_Detective_Photo_0: -235338519844297852
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
