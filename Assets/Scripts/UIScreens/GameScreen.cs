@@ -332,7 +332,7 @@ public class GameScreen : ScreenBase {
 				"NPC3" => "동수",
 				"NPC4" => "은지",
 				"Counselor" => "수정",
-				"Detective" => "탐정 고난",
+				"NPCDetective" => "탐정 고난",
 				"Ghost" => "유령",
 				"Minsu"  => "민수",
 				"People" => "사람들",

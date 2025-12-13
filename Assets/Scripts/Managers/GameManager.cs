@@ -321,8 +321,8 @@ public class GameManager : MonoSingleton<GameManager> {
 	// Lifecycle
 
 	void Start() {
-		GameState = GameState.Gameplay;
-		UIManager.OpenScreen(Screen.Game);
+		GameState = GameState.Paused;
+		UIManager.OpenScreen(Screen.MainMenu);
 	}
 
 	void Update() {

@@ -24,7 +24,7 @@ public class QuestManager : MonoSingleton<QuestManager> {
 
     // TODO 테스트 코드
     void Start() {
-        
+        /*
         var ok = new QuestRuntimeFactory.Builder("test_q1", "예진이의 버스킹", "런타임 생성 테스트 퀘스트")
             .Talk(
                 dialogueId: "q1_yejin",
@@ -63,7 +63,7 @@ public class QuestManager : MonoSingleton<QuestManager> {
                 doneDesc: "민수와 대화를 마쳤다.\n민수는 약속이 있어서 먼저 떠난 것이었다. 오히려 예진이의 음색을 칭찬했다."
             )
             .Start();
-
+*/
         /*
         // 1) 퀘스트 SO 즉석 생성
         var qq = ScriptableObject.CreateInstance<QuestData>();

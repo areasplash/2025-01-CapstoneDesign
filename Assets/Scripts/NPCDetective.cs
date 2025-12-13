@@ -52,6 +52,7 @@ public class NPCDetective : Actor {
 	[SerializeField] EventTrigger m_EventTrigger;
 	[SerializeField] DetectiveScenarioRunner m_ScenarioRunner;
 	[SerializeField] DetectiveScenarioSO m_Scenario;
+	float m_Timer;
 
 
 
@@ -73,6 +74,10 @@ public class NPCDetective : Actor {
 	DetectiveScenarioSO Scenario {
 		get => m_Scenario;
 		set => m_Scenario = value;
+	}
+	float Timer {
+		get => m_Timer;
+		set => m_Timer = value;
 	}
 
 
@@ -114,13 +119,17 @@ public class NPCDetective : Actor {
 				UseScheduler = false;
 				if (UIManager.CurrentScreen == Screen.Game && GameManager.GameState == GameState.Gameplay) {
 					GameManager.IntValue["NPCDetectiveState"] = 4;
+					Timer = 1f;
 				}
 			} break;
 			// State 4:
 			case 4: {
-				PathPoints.Clear();
-				BehaviorName = "Sleep";
-				UseScheduler = false;
+				Timer -= Time.deltaTime;
+				if (Timer <= 0f) {
+					PathPoints.Clear();
+					BehaviorName = "Sleep";
+					UseScheduler = false;
+				}
 			} break;
 		}
 	}

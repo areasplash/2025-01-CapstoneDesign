@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6c2d6a5c8c9b934dbb2922c3331e1c5, type: 3}
-  m_Name: YejinSchedule
+  m_Name: CounselorSchedule
   m_EditorClassIdentifier: 
   m_Behaviors:
   - name: Sleep
@@ -19,7 +19,7 @@ MonoBehaviour:
     weight: 0.5
     duration: 3
     isLocationBased: 1
-    location: {x: -13, y: 6.67, z: 0}
+    location: {x: -14.96, y: -10.23, z: 0}
   - name: Sleep
     isTimeFixed: 1
     startTime: 0

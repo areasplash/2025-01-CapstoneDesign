@@ -273,6 +273,7 @@ public sealed class ShopScreen : ScreenBase {
 					GameManager.IntValue["Gem"] -= entry.price;
 					entry.quantity--;
 					ItemList[index] = entry;
+					AudioManager.PlaySoundFX(Audio.Shop, 0.3f);
 					/*
 					구매 성공 처리
 					- ItemData -> ItemBase 변환 추가 필요
@@ -318,6 +319,7 @@ public sealed class ShopScreen : ScreenBase {
 					GameManager.IntValue["Gem"] -= entry.price;
 					entry.quantity--;
 					FeatureList[index] = entry;
+					AudioManager.PlaySoundFX(Audio.Shop, 0.3f);
 					entry.action?.Invoke();
 					RefreshDetailPanel(name, text, icon, entry.price, entry.quantity);
 					RefreshListPanelForBuy();
@@ -389,6 +391,7 @@ public sealed class ShopScreen : ScreenBase {
 					match = match && Input.button == instance;
 					match = match && Time.time - Input.time < DoubleClickThreshold;
 					if (match) {
+						AudioManager.PlaySoundFX(Audio.Shop, 0.3f);
 						OnSellCompleted(item);
 						RefreshDetailPanel(name, text, icon, price, item.Count);
 						RefreshListPanelForSell();
@@ -444,7 +447,6 @@ public sealed class ShopScreen : ScreenBase {
 		/*
 		인벤토리 내 아이템 +1 로직 추가 필요
 		*/
-		AudioManager.PlaySoundFX(Audio.Shop, 0.3f);
 		var itemBase = ItemDatabase.Instance.CreateItem(itemData, 1);
 		InventoryManager.Instance.AddItem(itemBase);
 	}
@@ -453,7 +455,6 @@ public sealed class ShopScreen : ScreenBase {
 		/*
 		인벤토리 내 아이템 -1 로직 추가 필요
 		*/
-		AudioManager.PlaySoundFX(Audio.Shop, 0.3f);
 		InventoryManager.Instance.RemoveItem(itemBase);
 	}
 

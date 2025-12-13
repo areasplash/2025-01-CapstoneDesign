@@ -17,6 +17,7 @@ public enum State {
 	Fishing_Carp,
 	Fishing_Mudfish,
 	Fishing_Crawfish,
+	Item_Guitar,
 };
 
 public enum Emotion {

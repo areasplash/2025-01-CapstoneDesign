@@ -141,3 +141,66 @@ public class RaiseDialogueCompletedEvent : EventBase {
         }
     }
 }
+
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Quest | Add Item
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[NodeMenu("Quest/Add Item")]
+public class AddItemEvent : EventBase {
+	// Editor
+
+	#if UNITY_EDITOR
+	public class AddItemEventNode : EventNodeBase {
+		AddItemEvent I => target as AddItemEvent;
+
+		public AddItemEventNode() : base() {
+			mainContainer.style.width = Node1U;
+		}
+
+		public override void ConstructData() {
+			var itemData = ObjectField(I.ItemData, v => I.ItemData = v);
+			mainContainer.Add(itemData);
+		}
+
+		public override void ConstructPort() {
+			CreatePort(Direction.Input);
+			CreatePort(Direction.Output);
+			RefreshExpandedState();
+			RefreshPorts();
+		}
+	}
+	#endif
+
+
+
+	// Fields
+
+	[SerializeField] ItemData m_ItemData;
+
+
+
+	// Properties
+
+	public ItemData ItemData {
+		get => m_ItemData;
+		set => m_ItemData = value;
+	}
+
+
+
+	// Methods
+	public override void CopyFrom(EventBase other) {
+		base.CopyFrom(other);
+		if (other is AddItemEvent addItemEvent) {
+			ItemData = addItemEvent.ItemData;
+		}
+	}
+
+	public override void End() {
+		var itemBase = ItemDatabase.Instance.CreateItem(ItemData, 1);
+		InventoryManager.Instance.AddItem(itemBase);
+	}
+}

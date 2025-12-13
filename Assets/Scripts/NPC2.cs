@@ -73,19 +73,19 @@ public class NPC2 : Actor {
 				new QuestRuntimeFactory.Builder("npc2_quest", "다솔의 버스킹")
 				.Talk(
 					dialogueId: "npc2_quest_talk1",
-					title: "버스킹 중 다들 떠난 이유 알아내기",
+					title: "버스킹 중 떠난 이유1",
 					activeDesc: "사람들이 버스킹을 듣다가 떠난 이유를 알아내자.",
 					doneDesc: "주민으로부터 버스킹을 듣다가 떠난 이유를 들었다!"
 				)
 				.Talk(
 					dialogueId: "npc2_quest_talk2",
-					title: "버스킹 중 다들 떠난 이유 알아내기",
+					title: "버스킹 중 떠난 이유2",
 					activeDesc: "사람들이 버스킹을 듣다가 떠난 이유를 알아내자.",
 					doneDesc: "주민으로부터 버스킹을 듣다가 떠난 이유를 들었다!"
 				)
 				.Talk(
 					dialogueId: "npc2_quest_talk3",
-					title: "사람들이 떠났던 이유 들려주기",
+					title: "떠난 이유 들려주기",
 					activeDesc: "사람들이 버스킹을 듣다가 떠난 이유를 다솔에게 말해주자.",
 					doneDesc: "다솔에게 사람들이 버스킹을 듣다가 떠난 이유를 말해주었다!"
 				)

@@ -96,19 +96,22 @@ public class Ghost : Actor {
 				new QuestRuntimeFactory.Builder("ghost_quest", "유령의 부탁")
 				.Talk(
 					dialogueId: "ghost_quest_talk1",
-					title: "전 마을이장의 도움을 받았던 주민들 찾기",
+					//title: "전 마을이장의 도움을 받았던 주민들 찾기",
+					title: "도움받은 주민 찾기",
 					activeDesc: "주민들에게서 유령이 생전 남긴 성과들을 듣자.",
 					doneDesc: "주민으로부터 유령에게 도움받았던 이야기를 들었다!"
 				)
 				.Talk(
 					dialogueId: "ghost_quest_talk2",
-					title: "전 마을이장의 도움을 받았던 주민들 찾기",
+					//title: "전 마을이장의 도움을 받았던 주민들 찾기",
+					title: "도움받은 주민 찾기",
 					activeDesc: "주민들에게서 유령이 생전 남긴 성과들을 듣자.",
 					doneDesc: "주민으로부터 유령에게 도움받았던 이야기를 들었다!"
 				)
 				.Talk(
 					dialogueId: "ghost_quest_talk3",
-					title: "사람들이 도움받았던 이야기를 말해주기",
+					//title: "사람들이 도움받았던 이야기를 말해주기",
+					title: "도움받은 이야기 전하기",
 					activeDesc: "전 마을이장에게 사람들이 도움받았던 이야기를 말해주자.",
 					doneDesc: "전 마을이장에게 사람들이 도움받았던 이야기를 말해주었다!"
 				)

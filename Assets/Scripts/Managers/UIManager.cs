@@ -337,6 +337,10 @@ public class UIManager : MonoSingleton<UIManager> {
 		return screenBase;
 	}
 
+	public static void OpenScreenAlt(ScreenBase screenBase) {
+		OpenScreen(screenBase);
+	}
+
 	public static void CloseScreen(Screen screen) {
 		CloseScreen(ScreenBases[(int)screen]);
 	}
