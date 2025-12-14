@@ -110,11 +110,13 @@ public class InventoryManager : MonoSingleton<InventoryManager> {
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("VendingMachineRedItem"), 5));
         InventoryManager.Instance.AddItem(new MapObjectItem(ItemDatabase.Instance.GetItemData("FountainItem"), 2));
         */
+		/*
         InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("CarrotSeed"));
         InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("WaterCan"));
         InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("VendingMachineRedItem"));
         InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("FountainItem"));
         InventoryManager.Instance.AddItem(ItemDatabase.Instance.CreateItem("SimpleBedItem", 5));
+		*/
     }
 
     private void OnEnable() {

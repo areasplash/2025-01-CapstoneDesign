@@ -66,7 +66,7 @@ public class MapObjectBase : MonoBehaviour {
     protected void ApplyCollider() {
         if (collider == null) { return; }
 		if (audioID == default) {
-			audioID= AudioManager.PlaySoundFX(Audio.Furniture, 0.6f);
+			audioID = AudioManager.PlaySoundFX(Audio.Furniture, 0.6f);
         }
 		if (data.UseSpriteCollider && spriteRenderer.sprite != null) {
             // 스프라이트 물리 콜라이더 적용

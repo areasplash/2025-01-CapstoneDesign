@@ -16,6 +16,8 @@ public class Counseler : MonoBehaviour, IInteractable {
 
     private string lastUserInput = "";
 
+	[SerializeField] MicRecorder micRecorder;
+
     // 서버 요청/응답 DTO
     [Serializable]
     private class ApiRequest {

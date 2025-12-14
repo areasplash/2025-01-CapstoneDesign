@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 using System;
 using System.Collections.Generic;
 using System.Collections;
@@ -61,7 +62,7 @@ public class DialogueScreen : ScreenBase {
 			I.AutoPlay = Toggle("Auto Play", I.AutoPlay);
 			if (I.AutoPlay) I.AutoPlayDelay = Slider("Auto Play Delay", I.AutoPlayDelay, 1f, 10f);
 			Space();
-
+			I.MicRecorder = ObjectField("Mic Recorder", I.MicRecorder);
 			End();
 		}
 	}
@@ -84,6 +85,8 @@ public class DialogueScreen : ScreenBase {
 	private Coroutine m_BGGroupCo = null;
 	private Coroutine m_BGCrossCo = null;
 	float GroupAlpha => m_BackgroundGroup ? m_BackgroundGroup.alpha : 0f;
+	[SerializeField] MicRecorder m_MicRecorder;
+	UnityEvent OnDialogueInputEnd = new();
 
 	[SerializeField] float m_TextDisplayDelay = 0.04f;
 	float m_TextDisplayTimer;
@@ -102,6 +105,7 @@ public class DialogueScreen : ScreenBase {
 	private bool choiceVisible = false;
 	private bool hasPendingChoices = false;
 	private bool blockCloseThisFrame = false;
+	uint audioID;
 
 
 	Queue<(string name, string text, Action onEnd)> m_DialogueQueue = new();
@@ -225,6 +229,11 @@ public class DialogueScreen : ScreenBase {
 		set => m_ChoiceItemPrefab = value;
 	}
 
+	MicRecorder MicRecorder {
+		get => m_MicRecorder;
+		set => m_MicRecorder = value;
+	}
+
 
 
 	Queue<(string name, string text, Action onEnd)> DialogueQueue => m_DialogueQueue;
@@ -245,13 +254,18 @@ public class DialogueScreen : ScreenBase {
 	public void BeginDialogueInput(Action<MultimodalData> onEnd = null) {
 		InputText = "";
 		EnableInput = true;
-		InputField.onEndEdit.RemoveAllListeners();
-		InputField.onEndEdit.AddListener(input => {
+		OnDialogueInputEnd.RemoveAllListeners();
+		OnDialogueInputEnd.AddListener(() => {
 			EnableInput = false;
-			onEnd?.Invoke(new MultimodalData { text = input });
+			onEnd?.Invoke(new MultimodalData {
+				text = InputText,
+				voice = MicRecorder.Clip,
+			});
 		});
 		UIManager.Selected = InputField;
 	}
+
+
 
 	/*
 	Dialogue Method Manual
@@ -292,6 +306,17 @@ public class DialogueScreen : ScreenBase {
 	void UpdateDialogue() {
 		TextDisplayTimer -= Time.deltaTime;
 
+		bool match = false;
+		match |= InputManager.GetKeyDown(KeyAction.Submit);
+		match |= InputManager.GetKeyDown(KeyAction.Cancel);
+		if (UIManager.Selected && UIManager.Selected.gameObject == MicRecorder.gameObject) {
+			match = false;
+		}
+		if (EnableInput && match) {
+			OnDialogueInputEnd.Invoke();
+			return;
+		}
+
 		if (DialogueQueue.TryPeek(out var value)) {
 			var (name, text, onEnd) = value;
 
@@ -324,7 +349,9 @@ public class DialogueScreen : ScreenBase {
             displayInstantly |= inputCancel;
 
 			while (TextIndex < text.Length && (TextDisplayTimer <= 0f || displayInstantly)) {
-				AudioManager.PlaySoundFX(Audio.Dialogue, 0.2f);
+				if (audioID == default) {
+					audioID = AudioManager.PlaySoundFX(Audio.Dialogue, 0.2f);
+				}
 				char next = text[TextIndex];
 				bool flag = next == '{';
 				if (flag && TryGetFunction(text, TextIndex, out int end, out var func, out var args)) {
@@ -371,6 +398,7 @@ public class DialogueScreen : ScreenBase {
 			dequeueDialogue |= inputSubmit && wasAlreadyFinished;
 			//dequeueDialogue |= allowAdvance && TextIndex == text.Length && InputManager.GetKeyDown(KeyAction.Submit);
 			dequeueDialogue |= allowAdvance && TextIndex == text.Length && AutoPlay && (TextDisplayTimer <= 0f);
+
 			if (dequeueDialogue) {
 				TextDisplayTimer = 0f;
 				TextIndex = 0;
@@ -654,6 +682,7 @@ public class DialogueScreen : ScreenBase {
 
 	void LateUpdate() {
 		UpdateDialogue();
+		audioID = default;
 	}
 
 	public override void Show() {
