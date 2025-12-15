@@ -2,6 +2,10 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using Unity.Services.Core;
+using Unity.Services.Authentication;
+using Unity.Services.Authentication.PlayerAccounts;
 using System.Text;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -11,17 +15,17 @@ public class Counseler : MonoBehaviour, IInteractable {
     public InteractionType InteractionType => InteractionType.Talk;
     public bool IsInteractable => true;
 
-    private string apiUrl = "http://54.181.0.220:8000/v1/dialog/generate";
-    private string apiKey = "Surhun0525!";
+    private string apiUrl = "http://SERVER_IP/v1/dialog/generate";
+    private string apiKey = "API_KEY";
 
     private string lastUserInput = "";
 
-	[SerializeField] MicRecorder micRecorder;
+   [SerializeField] MicRecorder micRecorder;
 
     // 서버 요청/응답 DTO
     [Serializable]
     private class ApiRequest {
-        public string player_id = "test_user";
+        public string player_id = AuthenticationService.Instance.PlayerId;
         public string session_id = "session_01";
         public string dialog_text;
         public string locale = "ko-KR";
@@ -61,10 +65,13 @@ public class Counseler : MonoBehaviour, IInteractable {
 
             // 사용자 입력
             bool inputDone = false;
+            AudioClip userVoiceClip = null;
+
             UIManager.BeginDialogueInput(data => {
                 lastUserInput = data.text ?? "";
                 inputDone = true;
                 Debug.Log($"[Counseler] 사용자가 입력한 내용: {lastUserInput}");
+                userVoiceClip = data.voice;
             });
             yield return new WaitUntil(() => inputDone);
 
@@ -73,10 +80,18 @@ public class Counseler : MonoBehaviour, IInteractable {
             bool replyReady = false;
             var prompt = BuildUserInput(lastUserInput);
 
-            StartCoroutine(GenerateDialog(prompt, line => {
-                npcLineFromServer = line;
-                replyReady = true;
-            }));
+            if (userVoiceClip != null) {
+                StartCoroutine(GenerateDialog(prompt, userVoiceClip, line => {
+                    npcLineFromServer = line;
+                    replyReady = true;
+                }));
+            }
+            else {
+                StartCoroutine(GenerateDialog(prompt, line => {
+                    npcLineFromServer = line;
+                    replyReady = true;
+                }));
+            }
 
             UIManager.EnqueueDialogue("수정", "잠깐만요… 생각을 정리해볼게요.", null);
             yield return WaitDialogueDrain();
@@ -143,6 +158,79 @@ public class Counseler : MonoBehaviour, IInteractable {
                     callback?.Invoke("죄송해요. 몸이 좋지 않아서 다음에 꼭 다시 얘기해 줄 수 있을까요?");
                 }
             }
+        }
+    }
+
+    private IEnumerator GenerateDialog(string inputText, AudioClip voiceClip, Action<string> callback) {
+        List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
+
+        formData.Add(new MultipartFormDataSection("player_id", AuthenticationService.Instance.PlayerId));
+        formData.Add(new MultipartFormDataSection("session_id", "session_01"));
+        formData.Add(new MultipartFormDataSection("dialog_text", inputText));
+        formData.Add(new MultipartFormDataSection("locale", "ko-KR"));
+        formData.Add(new MultipartFormDataSection("npc_persona", "따뜻한 상담사"));
+
+        if (voiceClip != null) {
+            byte[] wavData = ConvertClipToWav(voiceClip);
+            formData.Add(new MultipartFormFileSection("audio_file", wavData, "voice.wav", "audio/wav"));
+        }
+
+        using (var webRequest = UnityWebRequest.Post(apiUrl, formData)) {
+            webRequest.SetRequestHeader("X-Api-Key", apiKey);
+
+            yield return webRequest.SendWebRequest();
+
+            if (webRequest.result == UnityWebRequest.Result.ConnectionError ||
+                webRequest.result == UnityWebRequest.Result.ProtocolError) {
+                Debug.LogError($"[Counseler] API Error: {webRequest.error}");
+                callback?.Invoke("미안해요, 지금은 인터넷 연결 상태가 좋지 않아서 다음에 다시 시도해볼까요?");
+            } else {
+                string responseText = webRequest.downloadHandler.text;
+                Debug.Log($"[Counseler] Raw Response: {responseText}");
+                try {
+                    var result = JsonUtility.FromJson<ApiResponse>(responseText);
+                    callback?.Invoke(result?.npc_line ?? "조금 더 자세히 말씀해주시면 더 잘 도와드릴 수 있어요.");
+                } catch (Exception e) {
+                    Debug.LogError($"[Counseler] JSON 파싱 에러: {e.Message}");
+                    callback?.Invoke("죄송해요. 몸이 좋지 않아서 다음에 꼭 다시 얘기해 줄 수 있을까요?");
+                }
+            }
+        }
+    }
+
+    // AudioClip을 WAV 포맷 바이트 배열로 변환
+    private byte[] ConvertClipToWav(AudioClip clip) {
+        using (var memoryStream = new MemoryStream()) {
+            using (var writer = new BinaryWriter(memoryStream)) {
+                var samples = new float[clip.samples * clip.channels];
+                clip.GetData(samples, 0);
+
+                int sampleRate = clip.frequency;
+                int channels = clip.channels;
+                int sampleCount = samples.Length;
+
+                // WAV Header 작성
+                writer.Write(new char[4] { 'R', 'I', 'F', 'F' });
+                writer.Write(36 + sampleCount * 2);
+                writer.Write(new char[4] { 'W', 'A', 'V', 'E' });
+                writer.Write(new char[4] { 'f', 'm', 't', ' ' });
+                writer.Write(16);
+                writer.Write((ushort)1);
+                writer.Write((ushort)channels);
+                writer.Write(sampleRate);
+                writer.Write(sampleRate * channels * 2);
+                writer.Write((ushort)(channels * 2));
+                writer.Write((ushort)16);
+                writer.Write(new char[4] { 'd', 'a', 't', 'a' });
+                writer.Write(sampleCount * 2);
+
+                // Data 작성
+                foreach (var sample in samples) {
+                    short intSample = (short)(Mathf.Clamp(sample, -1f, 1f) * short.MaxValue);
+                    writer.Write(intSample);
+                }
+            }
+            return memoryStream.ToArray();
         }
     }
 

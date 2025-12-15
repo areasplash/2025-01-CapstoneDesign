@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: b71d43b86c90b7f4398f4608d6e71866
+guid: 53c2837abb5d0ab4881a42c916b2176d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6288179971597629913
-    second: Sofa_0
+      213: 1915090101210537560
+    second: GarbageCan_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Sofa_0
+      name: GarbageCan_0
       rect:
         serializedVersion: 2
-        x: 43
-        y: 22
-        width: 54
-        height: 60
+        x: 40
+        y: 19
+        width: 16
+        height: 27
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 726823dc1a5ebb8a0800000000000000
-      internalID: -6288179971597629913
+      spriteID: 85e558bec44c39a10800000000000000
+      internalID: 1915090101210537560
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Sofa_0: -6288179971597629913
+      GarbageCan_0: 1915090101210537560
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

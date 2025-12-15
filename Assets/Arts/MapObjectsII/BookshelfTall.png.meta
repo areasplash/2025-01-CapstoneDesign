@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: b71d43b86c90b7f4398f4608d6e71866
+guid: e972a2d82cd754d4aa1ff2b39a8b964f
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6288179971597629913
-    second: Sofa_0
+      213: -3526237227636672164
+    second: BookshelfTall_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -75,7 +75,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: 4
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Sofa_0
+      name: BookshelfTall_0
       rect:
         serializedVersion: 2
-        x: 43
-        y: 22
-        width: 54
-        height: 60
+        x: 34
+        y: 18
+        width: 24
+        height: 59
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 726823dc1a5ebb8a0800000000000000
-      internalID: -6288179971597629913
+      spriteID: c5935fc9ce9401fc0800000000000000
+      internalID: -3526237227636672164
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Sofa_0: -6288179971597629913
+      BookshelfTall_0: -3526237227636672164
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
